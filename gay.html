@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!- please don't judge me, I have no idea how to write in html ->
+<!- don't judge my javascript either }:( ->
+<html>
+<head>
+<title>Sub to Offset Converter</title>
+<style>
+h2 {center; font-family: Comic Sans MS, Comic Sans, cursive;}
+p {center; font-family: Comic Sans MS, Comic Sans, cursive;}
+.myDiv {
+	border: 3px solid lightblue;
+	background-color: lightblue;
+	text-align: center;
+	width: 600px;
+	margin: auto;
+	margin-bottom: 5px;
+}
+.presetDiv {
+	text-align: left;
+	background-color: LightSteelBlue;
+	width: 300px;
+	margin: auto;
+}
+</style>
+</head>
+<body style="background-color:powderblue;">
+
+<div class="myDiv">
+<h2>Original</h2>
+<p>Sub: <input type="text" id="subOG" value="60 FA 28 02" onkeyup="subInput()"> 
+Offset: <input type="text" id="offOG" value="0" onkeyup="offsetInput()"></p>
+<p><input type="checkbox" id="littleEndian" checked="true" onchange="autoInput()"><label for="littleEndian">Little Endian?</label></p>
+</div>
+
+<div class="myDiv">
+<h2>Find</h2>
+<p>Sub: <input type="text" id="sub" value="" onkeyup="subInput()"> 
+Offset: <input type="text" id="offset" value="0" onkeyup="offsetInput()"> </p>
+<p><button onclick="subInput()">Convert to Offset</button> 
+<button onclick="offsetInput()">Convert to Sub</button></p>
+</div>
+
+<div class="myDiv">
+<h2>Presets</h2>
+<div class="presetDiv">
+<p>
+<input type="radio" id="gba" name="preset" value="0" onchange="preset()" checked="false">
+<label for="gba">Rhythm Tengoku (GBA)</label><br>
+<input type="radio" id="nds" name="preset" value="1" onchange="preset()" checked="false">
+<label for="nds">Rhythm Heaven (NDS) (NA)</label><br>
+<input type="radio" id="wii" name="preset" value="2" onchange="preset()" checked="false">
+<label for="wii">Rhythm Heaven Fever (Wii) (NA)</label>
+</p>
+</div>
+</div>
+
+<div style="text-align: center">
+<p><img src="https://www.wired.com/images_blogs/photos/uncategorized/2008/07/30/rhythmgirl.jpg" alt="girl" height="120"></p>
+<p>brought to you by <strong>Rhythm Heaven</strong></p>
+</div>
+
+<script>
+var listOld = [
+["2C 2A 9F 08", "9F2A2C", true, "GBA"], //GBA uses 0D 00 00 00 XX XX XX XX to call subs, something the docs don't mention
+["B8 0A 29 02", "1058", true, "NDS"], 
+["80 21 7D E0", "213EE0", false, "WII"]
+];
+var list = [
+["00 00 00 08", "0", true, "GBA"],
+["60 FA 28 02", "0", true, "NDS"],
+["80 00 3F 00", "0", false, "WII"]
+]
+var lastInput = "offset";
+preset()
+function subInput() {
+  var sub = document.getElementById("sub").value;
+  var subOg = document.getElementById("subOG").value;
+  var offOg = document.getElementById("offOG").value;
+  var lilEndian = document.getElementById("littleEndian").checked;
+  document.getElementById("offset").value = findOffset(sub, subOg, offOg, lilEndian);
+  lastInput = "sub";
+}
+function offsetInput() {
+  var offset = document.getElementById("offset").value;
+  var subOg = document.getElementById("subOG").value;
+  var offOg = document.getElementById("offOG").value;
+  var lilEndian = document.getElementById("littleEndian").checked;
+  document.getElementById("sub").value = findSub(offset, subOg, offOg, lilEndian);
+  lastInput = "offset";
+}
+function autoInput() {
+	if (lastInput === "sub") {
+	subInput();
+	} else {
+	offsetInput();
+	}
+}
+
+function preset() {
+	var whom = document.querySelector('input[name="preset"]:checked').value;
+	var set = list[whom];
+	document.getElementById("subOG").value = set[0];
+	document.getElementById("offOG").value = set[1];
+	document.getElementById("littleEndian").checked = set[2];
+	autoInput()
+}
+
+function sub2dec(input, littleEndian = true) {
+  if (typeof(input) === 'string') {
+	if (littleEndian) {
+		var result = parseInt(input.split(" ").reverse().join(""), 16);
+	} else {
+		var result = parseInt(input.split(" ").join(""), 16);
+	}
+  } else {
+    var result = input.toString(16).toUpperCase();
+    if (result.length % 2 === 1) {
+      result = "0" + result;
+    }
+	if (littleEndian) {
+		result = result.match(/.{1,2}/g).reverse().join(" ");
+	} else {
+		result = result.match(/.{1,2}/g).join(" ");
+	}
+  }
+  return(result);
+}
+
+function findOffset(subED, subOG, offsetOG, littleEndian) {
+  const decSubOG = sub2dec(subOG, littleEndian);
+  const decSubED = sub2dec(subED, littleEndian);
+  const decOffsetOG = parseInt(offsetOG, 16);
+  const decOffsetED = decOffsetOG + decSubED - decSubOG;
+  const offsetED = decOffsetED.toString(16).toUpperCase();
+  return(offsetED);
+}
+
+function findSub(offsetED, subOG, offsetOG, littleEndian) {
+  const decOffsetOG = parseInt(offsetOG, 16);
+  const decOffsetED = parseInt(offsetED, 16);
+  const decSubOG = sub2dec(subOG, littleEndian);
+  const decSubED = decSubOG + decOffsetED - decOffsetOG;
+  const subED = sub2dec(decSubED, littleEndian);
+  return(subED);
+}
+</script>
+
+</body>
+</html>
