@@ -1,3 +1,8 @@
+Unindexed:
+avtr_ca2ba41c-baef-406d-956d-2fffb61444a7 // Choi Jun
+avtr_1df4b03a-8d65-404d-aae3-293af3453a9b // Cat Guy
+
+<standard>
 avtr_d1d37ef4-527a-4dfd-9461-1e9d72e1bcae // trollface  // this should be a comment and should NOT break anything
 avtr_511a2d8b-287b-4f7f-b642-77d6350c9795 // paddler
 avtr_89ec52f0-7cc7-4fd3-9d17-3da4ae229983 // chef kawasaki
@@ -71,7 +76,7 @@ avtr_4d3483e5-87dc-49db-9c7c-711e21930c09 // PARIPI Nomu Red
 avtr_a60a3314-4626-4237-83ee-eb452da0dd78 // Dogmeat Golden Retriever
 avtr_7294dfc7-eefd-40d3-adc4-900e9a07c728 // 챠롱 (Baby Quinton)
 avtr_b61fe93c-4da9-4f4f-8ebf-b9c0a2b04b7e // Cat World Souvenir
-avtr_233521d6-fe7f-4024-9884-0fb1ac8b0c4a // MONEY // ΛSTRΛIOUS＃0666
+avtr_233521d6-fe7f-4024-9884-0fb1ac8b0c4a // MONEY - ΛSTRΛIOUS＃0666
 avtr_b461bdc7-e0d0-422d-9a3c-6f3c0b8d1557 // Quinton (Bailey's)
 avtr_efa38253-44cf-4704-aa2a-3015a3dba13b // Anthro Dinkle
 avtr_1810df25-2066-4ba3-a69c-6eccd62e5c17 // Maxwell
@@ -81,3 +86,21 @@ avtr_50d0397b-a8f6-44ec-9d3d-65f7ec4a86fd // Baby Rat
 avtr_22479184-c9ba-425b-b233-e678010b2c0b // Quinton Clark OG
 avtr_1296b77d-c8ae-416c-acfa-16c2349f79fa // Quinton Clark
 avtr_2b4896c5-102d-462a-b23a-9871dc9768b0 // Better Berdly
+</standard>
+
+<removed>
+avtr_ed542239-6c10-4914-9217-b61f58096b50 // choi jun OG
+avtr_4c177aba-42a1-4eab-964c-4c30dea1597d // pink axolotl
+avtr_0c0b4df2-8b6f-488d-8ef9-64088c3a584f // ENA small
+avtr_0d0de067-08cf-4b7c-9287-7498b88f511b // Patty wagon
+avtr_327c9e2a-7db3-4e6a-9aa2-38ff088bc207 // giant monkey
+avtr_e0087bf7-5693-4516-a552-74b9cd2fbdbf // minato aqua
+avtr_e9738990-23ea-4438-930c-8da9568be8e6 // pekora
+avtr_b75b8468-943c-48ea-937d-b7af6be1f8e0 // gawr gura kon
+avtr_4d6c452c-5712-4947-8dc0-6b62fee290eb // Battlefield 2 AH-64 Apache
+avtr_e3d78e8a-047a-4e30-aba6-69c45eff23dc // Battlefield 2 M1 Abrams
+avtr_f4fd250e-622c-4ea3-9892-811771990de5 // bitcoin man: the him rich
+avtr_634e744e-1ef6-4826-b120-3f3b89127fc7 // La Creatura
+avtr_aeaa285d-6ab5-4330-ac08-e798f9e7cbce // quagmire
+avtr_2bb2b074-406d-41bd-8924-fbe769e6251e // BackwoodFish
+</removed>
