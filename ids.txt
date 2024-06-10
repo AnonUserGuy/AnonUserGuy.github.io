@@ -1,83 +1,83 @@
-avtr_d1d37ef4-527a-4dfd-9461-1e9d72e1bcae:trollface
-avtr_511a2d8b-287b-4f7f-b642-77d6350c9795:paddler
-avtr_89ec52f0-7cc7-4fd3-9d17-3da4ae229983:chef kawasaki
-avtr_5f579bee-6ef8-43f8-b847-c0b689a84e0a:appa
-avtr_7635b380-8b39-48a9-b56d-57538a93af9e:mitch sorenstein
-avtr_6cb8960d-6413-4dbc-bc28-81b1d3a33fb3:polish dancing cow
-avtr_3e7eb2bf-25e3-4b58-a776-a8839a312ac4:guy on a bucket
-avtr_bf88046f-92f6-4995-9d6e-93636028d7d8:pogchamp
-avtr_ca05263f-b010-4eea-bc53-f22a5deb584f:stall lord (tall skeleton)
-avtr_91eecb76-f23d-4a81-b967-15cabd4699db:chimp
-avtr_c1dac9c2-4dbb-48a2-a540-046a91a2a167:obama duck
-avtr_7695fd93-2831-4be5-a64d-d6e2a9a7999a:ENA
-avtr_c41f046c-563a-4f3b-bb88-6754a954e391:desert rain frog
-avtr_47d2d719-2e41-4375-a6e8-5eb3fa316d7f:leg miku
-avtr_baafb139-ebaa-4be4-bc8a-ca58a9ac850e:shitty gnome
-avtr_9ea37a9e-2c83-450e-ba48-4d253e993dfd:russia kon
-avtr_a7476f46-8a1d-464a-aeaa-9bfed7649bd5:big troll
-avtr_440d276c-ed9f-43ca-acab-f3d0028fd375:jfk
-avtr_0df186cd-6ebc-4286-8ecd-589b4a70d991:tail fish
-avtr_6ee4500e-a135-4bb8-8049-3432b523baf7:zoom car
-avtr_c0adbb91-5565-40d9-abe1-a07e7f7a4036:swingset
-avtr_71af1b43-33f1-4fc6-a27d-335725bfd1d5:sheriff chimp
-avtr_6ab9296b-029c-403a-9f19-be1ffd940726:small cat 
-avtr_1b57b392-c15e-474e-a8c1-215d53efd856:obunga
-avtr_15aee259-a3f9-4aa7-a848-49470aa46da6:aurora woods incident
-avtr_4ee005c5-847a-4677-8523-8a8d94b4a434:poop monkey 2
-avtr_4b8fa09f-b76e-4797-9ec9-b1402c628f7a:flunkey monkey time?
-avtr_f3d1c560-3a1b-4f51-bbf6-af48ed185c22:max
-avtr_9c29c042-4937-45d7-a280-ec11833b2dd6:sussy
-avtr_01bc6d1b-091a-4e40-9c74-669806297cb4:stiltman incident
-avtr_53036f9c-f5b6-4819-8070-d2d6aeda9bad:fields of amogus
-avtr_7caa53b9-7312-4b31-8721-c05837f30b6f:king julian
-avtr_c24177d8-9348-4df4-a859-522b21341880:floating fred
-avtr_48224328-ed91-47c7-bdce-6d0c3f45c4c9:Speck Master Chief
-avtr_7b33bd3c-a0db-4d6d-b6d4-b7a4a0c32cd7:Dofg
-avtr_5e9363d5-54e4-422c-88c0-cd8c7abd1abb:Overalls monkey
-avtr_5fc3bc55-f56e-4df2-aeaf-226a99bcebc1:Room
-avtr_448d703d-578f-41b0-9c85-98a6a3474bc6:Man Skateboarding
-avtr_0d4c228d-52ee-489a-abdc-d6ca5903ffa2:Parents and Baby
-avtr_e22c8a3f-5187-4d47-a57d-ecf338f69034:the Quiggle Catfish
-avtr_a927b8ad-c45d-4486-bb6e-1b72635beca8:Polar Express
-avtr_4bbb4a1b-f186-4159-aadd-6db9de30dfe4:Hamster
-avtr_363f8c35-0e3e-41fb-849e-f5e66d53d8d6:Balls cat
-avtr_243ebd9d-00a7-44d6-a032-4fcaf00c7e06:spin fish
-avtr_ccb12a70-a4d1-4f4b-a46a-cee75f1e1c62:Talking Ben
-avtr_8cbf8461-f154-46c1-80fd-c9da412e2b11:Minecraft Miku
-avtr_d2bee1ad-57f2-4f17-9b9d-4f192c0128d4:Rat Pope
-avtr_436988ed-3aca-4fc4-92b1-aecbb1d5b9f7:Love the Mets
-avtr_33864029-0013-42b4-949d-4a89ba746d08:Dead Deer
-avtr_6dfcedc6-afbd-4759-8075-b002648f0a53:shitty Berdly
-avtr_10d9df40-56ca-4ef6-b781-a3c2be66bbc7:Pepsi Incident
-avtr_4af7ddb4-2ced-43bd-86e2-1c60573f4aa7:Mario Frog
-avtr_c6811f24-6c38-4447-8971-d15faaaaa587:bob AC
-avtr_3bf67d65-8734-42f9-8ae4-239569e435b7:Chimpress
-avtr_39c6f8c6-0939-4e6a-92a6-8e553f838dd7:Bipedal Cat
-avtr_88c3bd78-d801-43cf-ae21-c7040ca162b8:Furry Militia Uniform
-avtr_ae405901-2404-431e-92ec-6e7eb02ce7e1:Goose Standard
-avtr_68fc566e-6530-42cb-8edc-14d186fb4773:Retbuffko
-avtr_1915ff47-6bf8-4c50-b8ef-5de98898778b:Vibri
-avtr_8fc14fa8-4581-4e2e-96f6-a09e2e6c8840:Half Cat
-avtr_e5e71c58-29a3-4ab0-a0b1-18e60b7be915:Half Cat Quest
-avtr_a198da0f-7ef7-46ce-b75e-6c53744e4f2a:El Gato
-avtr_32407b48-f8cb-4797-8b3f-266a71781fe0:Crab from *Spirits of the Sea*
-avtr_519413af-e3fe-43bc-940d-2fb8b6452c54:Flying Rat
-avtr_2a3f3dbf-8818-4628-a959-eab3f63a2907:Giant Spider
-avtr_c2bc3307-90c9-465c-af0f-5aeecf46df0e:Harold, or theinternethistorian
-avtr_dafc5682-6107-4a6f-a006-8538b9f86f70:aDanza Cat
-avtr_61be00fa-0093-4b40-b475-62c682c9d372:Schnoz
-avtr_70199136-7878-44c6-bac0-f264ff85795a:ɐqɐʎɐʞ oʞıɥıʞɐ (akihiko kayaba)
-avtr_4d3483e5-87dc-49db-9c7c-711e21930c09:PARIPI Nomu Red
-avtr_a60a3314-4626-4237-83ee-eb452da0dd78:Dogmeat Golden Retriever
-avtr_7294dfc7-eefd-40d3-adc4-900e9a07c728:챠롱 (Baby Quinton)
-avtr_b61fe93c-4da9-4f4f-8ebf-b9c0a2b04b7e:Cat World Souvenir
-avtr_233521d6-fe7f-4024-9884-0fb1ac8b0c4a:MONEY:ΛSTRΛIOUS＃0666
-avtr_b461bdc7-e0d0-422d-9a3c-6f3c0b8d1557:Quinton (Bailey's)
-avtr_efa38253-44cf-4704-aa2a-3015a3dba13b:Anthro Dinkle
-avtr_1810df25-2066-4ba3-a69c-6eccd62e5c17:Maxwell
-avtr_21f5623f-49d7-40d8-9152-d081508541d1:Average PCVR Enthusiast
-avtr_1d507ac7-f77f-44f9-a3cf-3377f4027f0d:100 GECS
-avtr_50d0397b-a8f6-44ec-9d3d-65f7ec4a86fd:Baby Rat
-avtr_22479184-c9ba-425b-b233-e678010b2c0b:Quinton Clark OG
-avtr_1296b77d-c8ae-416c-acfa-16c2349f79fa:Quinton Clark
-avtr_2b4896c5-102d-462a-b23a-9871dc9768b0:Better Berdly
+avtr_d1d37ef4-527a-4dfd-9461-1e9d72e1bcae ;; trollface ;; this should be a comment and should NOT break anything
+avtr_511a2d8b-287b-4f7f-b642-77d6350c9795 ;; paddler
+avtr_89ec52f0-7cc7-4fd3-9d17-3da4ae229983 ;; chef kawasaki
+avtr_5f579bee-6ef8-43f8-b847-c0b689a84e0a ;; appa
+avtr_7635b380-8b39-48a9-b56d-57538a93af9e ;; mitch sorenstein
+avtr_6cb8960d-6413-4dbc-bc28-81b1d3a33fb3 ;; polish dancing cow
+avtr_3e7eb2bf-25e3-4b58-a776-a8839a312ac4 ;; guy on a bucket
+avtr_bf88046f-92f6-4995-9d6e-93636028d7d8 ;; pogchamp
+avtr_ca05263f-b010-4eea-bc53-f22a5deb584f ;; stall lord (tall skeleton)
+avtr_91eecb76-f23d-4a81-b967-15cabd4699db ;; chimp
+avtr_c1dac9c2-4dbb-48a2-a540-046a91a2a167 ;; obama duck
+avtr_7695fd93-2831-4be5-a64d-d6e2a9a7999a ;; ENA
+avtr_c41f046c-563a-4f3b-bb88-6754a954e391 ;; desert rain frog
+avtr_47d2d719-2e41-4375-a6e8-5eb3fa316d7f ;; leg miku
+avtr_baafb139-ebaa-4be4-bc8a-ca58a9ac850e ;; shitty gnome
+avtr_9ea37a9e-2c83-450e-ba48-4d253e993dfd ;; russia kon
+avtr_a7476f46-8a1d-464a-aeaa-9bfed7649bd5 ;; big troll
+avtr_440d276c-ed9f-43ca-acab-f3d0028fd375 ;; jfk
+avtr_0df186cd-6ebc-4286-8ecd-589b4a70d991 ;; tail fish
+avtr_6ee4500e-a135-4bb8-8049-3432b523baf7 ;; zoom car
+avtr_c0adbb91-5565-40d9-abe1-a07e7f7a4036 ;; swingset
+avtr_71af1b43-33f1-4fc6-a27d-335725bfd1d5 ;; sheriff chimp
+avtr_6ab9296b-029c-403a-9f19-be1ffd940726 ;; small cat 
+avtr_1b57b392-c15e-474e-a8c1-215d53efd856 ;; obunga
+avtr_15aee259-a3f9-4aa7-a848-49470aa46da6 ;; aurora woods incident
+avtr_4ee005c5-847a-4677-8523-8a8d94b4a434 ;; poop monkey 2
+avtr_4b8fa09f-b76e-4797-9ec9-b1402c628f7a ;; flunkey monkey time?
+avtr_f3d1c560-3a1b-4f51-bbf6-af48ed185c22 ;; max
+avtr_9c29c042-4937-45d7-a280-ec11833b2dd6 ;; sussy
+avtr_01bc6d1b-091a-4e40-9c74-669806297cb4 ;; stiltman incident
+avtr_53036f9c-f5b6-4819-8070-d2d6aeda9bad ;; fields of amogus
+avtr_7caa53b9-7312-4b31-8721-c05837f30b6f ;; king julian
+avtr_c24177d8-9348-4df4-a859-522b21341880 ;; floating fred
+avtr_48224328-ed91-47c7-bdce-6d0c3f45c4c9 ;; Speck Master Chief
+avtr_7b33bd3c-a0db-4d6d-b6d4-b7a4a0c32cd7 ;; Dofg
+avtr_5e9363d5-54e4-422c-88c0-cd8c7abd1abb ;; Overalls monkey
+avtr_5fc3bc55-f56e-4df2-aeaf-226a99bcebc1 ;; Room
+avtr_448d703d-578f-41b0-9c85-98a6a3474bc6 ;; Man Skateboarding
+avtr_0d4c228d-52ee-489a-abdc-d6ca5903ffa2 ;; Parents and Baby
+avtr_e22c8a3f-5187-4d47-a57d-ecf338f69034 ;; the Quiggle Catfish
+avtr_a927b8ad-c45d-4486-bb6e-1b72635beca8 ;; Polar Express
+avtr_4bbb4a1b-f186-4159-aadd-6db9de30dfe4 ;; Hamster
+avtr_363f8c35-0e3e-41fb-849e-f5e66d53d8d6 ;; Balls cat
+avtr_243ebd9d-00a7-44d6-a032-4fcaf00c7e06 ;; spin fish
+avtr_ccb12a70-a4d1-4f4b-a46a-cee75f1e1c62 ;; Talking Ben
+avtr_8cbf8461-f154-46c1-80fd-c9da412e2b11 ;; Minecraft Miku
+avtr_d2bee1ad-57f2-4f17-9b9d-4f192c0128d4 ;; Rat Pope
+avtr_436988ed-3aca-4fc4-92b1-aecbb1d5b9f7 ;; Love the Mets
+avtr_33864029-0013-42b4-949d-4a89ba746d08 ;; Dead Deer
+avtr_6dfcedc6-afbd-4759-8075-b002648f0a53 ;; shitty Berdly
+avtr_10d9df40-56ca-4ef6-b781-a3c2be66bbc7 ;; Pepsi Incident
+avtr_4af7ddb4-2ced-43bd-86e2-1c60573f4aa7 ;; Mario Frog
+avtr_c6811f24-6c38-4447-8971-d15faaaaa587 ;; bob AC
+avtr_3bf67d65-8734-42f9-8ae4-239569e435b7 ;; Chimpress
+avtr_39c6f8c6-0939-4e6a-92a6-8e553f838dd7 ;; Bipedal Cat
+avtr_88c3bd78-d801-43cf-ae21-c7040ca162b8 ;; Furry Militia Uniform
+avtr_ae405901-2404-431e-92ec-6e7eb02ce7e1 ;; Goose Standard
+avtr_68fc566e-6530-42cb-8edc-14d186fb4773 ;; Retbuffko
+avtr_1915ff47-6bf8-4c50-b8ef-5de98898778b ;; Vibri
+avtr_8fc14fa8-4581-4e2e-96f6-a09e2e6c8840 ;; Half Cat
+avtr_e5e71c58-29a3-4ab0-a0b1-18e60b7be915 ;; Half Cat Quest
+avtr_a198da0f-7ef7-46ce-b75e-6c53744e4f2a ;; El Gato
+avtr_32407b48-f8cb-4797-8b3f-266a71781fe0 ;; Crab from *Spirits of the Sea*
+avtr_519413af-e3fe-43bc-940d-2fb8b6452c54 ;; Flying Rat
+avtr_2a3f3dbf-8818-4628-a959-eab3f63a2907 ;; Giant Spider
+avtr_c2bc3307-90c9-465c-af0f-5aeecf46df0e ;; Harold, or theinternethistorian
+avtr_dafc5682-6107-4a6f-a006-8538b9f86f70 ;; aDanza Cat
+avtr_61be00fa-0093-4b40-b475-62c682c9d372 ;; Schnoz
+avtr_70199136-7878-44c6-bac0-f264ff85795a ;; ɐqɐʎɐʞ oʞıɥıʞɐ (akihiko kayaba)
+avtr_4d3483e5-87dc-49db-9c7c-711e21930c09 ;; PARIPI Nomu Red
+avtr_a60a3314-4626-4237-83ee-eb452da0dd78 ;; Dogmeat Golden Retriever
+avtr_7294dfc7-eefd-40d3-adc4-900e9a07c728 ;; 챠롱 (Baby Quinton)
+avtr_b61fe93c-4da9-4f4f-8ebf-b9c0a2b04b7e ;; Cat World Souvenir
+avtr_233521d6-fe7f-4024-9884-0fb1ac8b0c4a ;; MONEY ;; ΛSTRΛIOUS＃0666
+avtr_b461bdc7-e0d0-422d-9a3c-6f3c0b8d1557 ;; Quinton (Bailey's)
+avtr_efa38253-44cf-4704-aa2a-3015a3dba13b ;; Anthro Dinkle
+avtr_1810df25-2066-4ba3-a69c-6eccd62e5c17 ;; Maxwell
+avtr_21f5623f-49d7-40d8-9152-d081508541d1 ;; Average PCVR Enthusiast
+avtr_1d507ac7-f77f-44f9-a3cf-3377f4027f0d ;; 100 GECS
+avtr_50d0397b-a8f6-44ec-9d3d-65f7ec4a86fd ;; Baby Rat
+avtr_22479184-c9ba-425b-b233-e678010b2c0b ;; Quinton Clark OG
+avtr_1296b77d-c8ae-416c-acfa-16c2349f79fa ;; Quinton Clark
+avtr_2b4896c5-102d-462a-b23a-9871dc9768b0 ;; Better Berdly
