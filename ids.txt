@@ -2,7 +2,7 @@ Unindexed:
 avtr_ca2ba41c-baef-406d-956d-2fffb61444a7 // Choi Jun
 avtr_1df4b03a-8d65-404d-aae3-293af3453a9b // Cat Guy
 
-<standard>
+standard
 avtr_d1d37ef4-527a-4dfd-9461-1e9d72e1bcae // trollface  // this should be a comment and should NOT break anything
 avtr_511a2d8b-287b-4f7f-b642-77d6350c9795 // paddler
 avtr_89ec52f0-7cc7-4fd3-9d17-3da4ae229983 // chef kawasaki
@@ -86,9 +86,9 @@ avtr_50d0397b-a8f6-44ec-9d3d-65f7ec4a86fd // Baby Rat
 avtr_22479184-c9ba-425b-b233-e678010b2c0b // Quinton Clark OG
 avtr_1296b77d-c8ae-416c-acfa-16c2349f79fa // Quinton Clark
 avtr_2b4896c5-102d-462a-b23a-9871dc9768b0 // Better Berdly
-</standard>
+standardend
 
-<removed>
+removed
 avtr_ed542239-6c10-4914-9217-b61f58096b50 // choi jun OG
 avtr_4c177aba-42a1-4eab-964c-4c30dea1597d // pink axolotl
 avtr_0c0b4df2-8b6f-488d-8ef9-64088c3a584f // ENA small
@@ -103,4 +103,4 @@ avtr_f4fd250e-622c-4ea3-9892-811771990de5 // bitcoin man: the him rich
 avtr_634e744e-1ef6-4826-b120-3f3b89127fc7 // La Creatura
 avtr_aeaa285d-6ab5-4330-ac08-e798f9e7cbce // quagmire
 avtr_2bb2b074-406d-41bd-8924-fbe769e6251e // BackwoodFish
-</removed>
+removedend
