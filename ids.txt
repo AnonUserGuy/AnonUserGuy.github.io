@@ -72,6 +72,7 @@ avtr_5fc3bc55-f56e-4df2-aeaf-226a99bcebc1 // Room
 avtr_0d4c228d-52ee-489a-abdc-d6ca5903ffa2 // Parents and Baby
 avtr_c24177d8-9348-4df4-a859-522b21341880 // floating fred
 avtr_21f5623f-49d7-40d8-9152-d081508541d1 // Average PCVR Enthusiast
+avtr_83719bd8-41c2-42c7-81b2-0263bf15088b // Guy with cat
 avtr_7635b380-8b39-48a9-b56d-57538a93af9e // mitch sorenstein //                   OTHER
 avtr_bf88046f-92f6-4995-9d6e-93636028d7d8 // pogchamp
 avtr_baafb139-ebaa-4be4-bc8a-ca58a9ac850e // shitty gnome
@@ -85,6 +86,7 @@ avtr_88c3bd78-d801-43cf-ae21-c7040ca162b8 // Furry Militia Uniform
 avtr_c2bc3307-90c9-465c-af0f-5aeecf46df0e // Harold // or theinternethistorian
 avtr_61be00fa-0093-4b40-b475-62c682c9d372 // Schnoz
 avtr_233521d6-fe7f-4024-9884-0fb1ac8b0c4a // MONEY - ΛSTRΛIOUS ＃0666
+avtr_3218f492-4f30-45ec-b822-3c192d99a2b4 // Lil Chuddy
 standardend
 
 removed
