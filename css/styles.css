@@ -1,0 +1,27 @@
+body {
+    background-color: powderblue;
+    font-family: Comic Sans MS, Comic Sans, sans-serif;
+    text-align: center;
+}
+
+.section {
+    border: 3px solid lightblue;
+    background-color: lightblue;
+    width: 600px;
+    margin: auto;
+    margin-bottom: 5px;
+}
+
+.selector {
+    text-align: left;
+    background-color: LightSteelBlue;
+    width: 300px;
+    margin: auto;
+}
+
+.dot {
+    position: fixed;
+    overflow: hidden;
+    bottom: 0px;
+    left: 0px;
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sub to Offset Converter</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/add_dot.js"></script>
+
+    <script src="../js/get_minecraft_usernames_from_uuids.js"></script>
+</head>
+
+<body>
+    <div>
+        <a href="../">&lt-- go back</a>
+    </div>
+    <div class="section">
+        <input id="uploadInput" type="file" accept="application/json" multiple />
+    </div>
+
+    <script>
+        const uploadInput = document.getElementById("uploadInput");
+
+        const timeline = [];
+        
+        uploadInput.addEventListener("change", () => {
+            for (const file of uploadInput.files) {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    const text = reader.result;
+                    const data = JSON.parse(text);
+                    for (const entry in data) {
+                        if (!(data[entry] instanceof Object && "criteria" in data[entry])) continue;
+                        for (const criterion in data[entry].criteria) {
+                            
+                        }
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+    </script>
+
+</body>
+
+</html>
