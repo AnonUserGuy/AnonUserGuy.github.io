@@ -4,12 +4,27 @@ body {
     text-align: center;
 }
 
-.section {
-    border: 3px solid lightblue;
+summary > h1, summary > h2, summary > h3 {
+    display: inline-block;
+    margin-bottom: 0px;
+}
+
+input[type="file"] {
+    background-color: LightSteelBlue;
+}
+
+.section, .section-timeline {
+    padding: 3px;
     background-color: lightblue;
     width: 600px;
+    max-width: 100%;
     margin: auto;
     margin-bottom: 5px;
+}
+
+.section-timeline {
+    width: 900px;
+    text-align: left;
 }
 
 .selector {

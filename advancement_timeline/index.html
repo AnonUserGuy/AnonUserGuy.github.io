@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Advancement Timeline Generator</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/add_dot.js"></script>
+
+    <script src="../js/get_minecraft_usernames_from_uuids.js"></script>
+</head>
+
+<body>
+    <div>
+        <a href="../">&lt-- go back</a>
+    </div>
+    <div class="section">
+        <p>Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get your advancement timeline for that world!</p>
+        <input id="uploadInput" type="file" accept="application/json" multiple />
+    </div>
+
+    <div class="section-timeline" id="timelineDiv" hidden></div>
+
+    <script>
+        const COLORS = ["red", "Coral", "green", "blue", "purple"];
+        const DateTimeFormat = new Intl.DateTimeFormat(undefined, {
+            dateStyle: "short",
+            timeStyle: "long"
+        });
+        const DateFormat = new Intl.DateTimeFormat(undefined, {
+            dateStyle: "full"
+        });
+        const uploadInput = document.getElementById("uploadInput");
+        const timelineDiv = document.getElementById("timelineDiv");
+
+        const timeline = [];
+        const profiles = [];
+
+        var s = document.createElement("style");
+        s.type = "text/css";
+        s.innerText = COLORS.map((color, i) => `.p${i} {color: ${color};}`).join(" ");
+        document.head.appendChild(s);
+
+        function promiseFileAsText(file) {
+            const reader = new FileReader();
+
+            return new Promise((resolve, reject) => {
+                reader.onload = () => {
+                    resolve(reader.result)
+                }
+                reader.onerror = () => {
+                    reader.abort();
+                    reject()
+                }
+                reader.readAsText(file);
+            });
+        }
+        function removeDuplicateEvents(arr) {
+            for (let i = 0; i < arr.length - 1; i++) {
+                let j = i + 1;
+                while (j < arr.length && eventsAreDuplicates(arr[i], arr[j])) {
+                    j++;
+                }
+                if (j !== i + 1) {
+                    arr.splice(i + 1, j - i - 1);
+                }
+            }
+        }
+        function eventsAreDuplicates(event1, event2) {
+            return event1[0].getTime() === event2[0].getTime() && event1[1] === event2[1] && event1[2] === event2[2];
+        }
+
+        uploadInput.addEventListener("change", async () => {
+            await updateTimeline();
+            timelinePrint();
+        });
+
+        async function updateTimeline() {
+            const files = Array.from(uploadInput.files);
+
+            const uuids = files.map(file => file.name.replace(/(.*)\..*/, "$1"));
+            const usernamesPromise = getMinecraftUsernamesFromUuids(uuids).then((usernames) => {
+                for (let i = 0; i < usernames.length; i++) {
+                    profiles[profileIndices[i]].username = usernames[i];
+                }
+            });
+            const profileIndices = [];
+            for (let i = 0; i < uuids.length; i++) {
+                let profileIndex = profiles.findIndex(profile => profile.uuid === uuids[i]);
+                if (profileIndex === -1) {
+                    profileIndex = profiles.length;
+                    profiles.push({ uuid: uuids[i] });
+                }
+                profileIndices[i] = profileIndex;
+            }
+
+            await Promise.allSettled(files.map((file, i) => promiseFileAsText(file).then((text) => {
+                const data = JSON.parse(text);
+                const profileIndex = profileIndices[i];
+
+                for (const entry in data) {
+                    if (!(data[entry] instanceof Object && "criteria" in data[entry])) continue;
+                    for (const criterion in data[entry].criteria) {
+                        const dateString = data[entry].criteria[criterion];
+                        const date = new Date(dateString);
+
+                        let event = "";
+                        if (criterion == "has_the_recipe") {
+                            event = entry.replace(/\w+:recipes\/\w+\/(\w+)/, "Has recipe: $1")
+                        } else if (!entry.startsWith('minecraft')) {
+                            if (criterion.startsWith('has') && criterion !== has_ingredient && criterion !== has_item) {
+                                event = criterion;
+                            } else {
+                                const match = entry.match(/^(\w+):.*?\/(\w+)$/);
+                                if (match) {
+                                    if (match[2] == criterion) {
+                                        event = `${match[1]}:${match[2]}`
+                                    } else {
+                                        event = `${match[1]}:${match[2]},${criterion}`
+                                    }
+                                } else {
+                                    event = `${entry},${criterion}`;
+                                }
+                            }
+                        } else if (criterion == "has_double_plant") {
+                            event = entry.replace(/\w+:recipes\/\w+\/(\w+)/, "Learned: $1");
+                        } else if (entry == "minecraft:adventure/adventuring_time" || entry == "minecraft:nether/explore_nether") {
+                            event = criterion.replace(/^minecraft:(\w+)$/, "Biome: $1");
+                        } else if (entry == "minecraft:husbandry/balanced_diet") {
+                            event = `Ate: ${criterion}`;
+                        } else if (entry == "minecraft:husbandry/whole_pack") {
+                            event = criterion.replace(/^minecraft:(\w+)$/, "tamed wolf: $1");
+                        } else if (entry == "minecraft:husbandry/leash_all_frog_variants") {
+                            event = criterion.replace(/^minecraft:(\w+)$/, "led frog: $1");
+                        } else if (entry == "minecraft:husbandry/breed_an_animal") {
+                            event = "bred animal";
+                        } else if (entry == "minecraft:nether/brew_potion") {
+                            event = "brew potion";
+                        } else if (entry == "minecraft:husbandry/bred_all_animals") {
+                            event = criterion.replace(/^minecraft:(\w+)$/, "bred: $1");
+                        } else if (entry == "minecraft:adventure/kill_all_mobs" || entry == "minecraft:adventure/kill_a_mob") {
+                            event = criterion.replace(/^minecraft:(\w+)$/, "Killed: $1");
+                        } else if (entry == "minecraft:husbandry/plant_seed") {
+                            event = `Planted first crop: ${criterion}`;
+                        } else {
+                            event = criterion;
+                        }
+
+                        timeline.push([date, profileIndex, event]);
+                    }
+                }
+            })));
+            timeline.sort((a, b) => a[2].localeCompare(b[2])).sort((a, b) => a[0] - b[0]);
+            removeDuplicateEvents(timeline);
+
+            await usernamesPromise;
+            console.log("all files read!");
+        }
+
+        function timelinePrint() {
+            if (timelineDiv.hasAttribute("hidden")) {
+                timelineDiv.removeAttribute("hidden");
+            }
+
+            timelineDiv.replaceChildren();
+
+            let prevDate = new Date(0);
+            let currentDateEl = null;
+            let currentHourEl = null;
+            let currentTimeEl = null;
+            for (let i = 0; i < timeline.length; i++) {
+                const event = timeline[i];
+                const date = event[0];
+                if (!sameDay(date, prevDate)) {
+                    // different day
+                    const dateDetailsEl = document.createElement("details");
+                    dateDetailsEl.setAttribute("open", "");
+                    dateDetailsEl.setAttribute("id", `date${i}`);
+                    const dateSummaryEl = document.createElement("summary");
+                    dateDetailsEl.appendChild(dateSummaryEl);
+
+                    const dateEl = document.createElement("h2");
+                    const dateTextEl = document.createTextNode(DateFormat.format(date));
+                    dateEl.appendChild(dateTextEl);
+                    dateSummaryEl.appendChild(dateEl);
+
+                    timelineDiv.appendChild(dateDetailsEl);
+                    currentDateEl = dateDetailsEl;
+                }
+                const hour = date.getHours();
+                if (!sameDay(date, prevDate) || hour !== prevDate.getHours()) {
+                    // different hour
+                    const hourDetailsEl = document.createElement("details");
+                    hourDetailsEl.setAttribute("open", "");
+                    hourDetailsEl.setAttribute("id", `hour${i}`);
+                    const hourSummaryEl = document.createElement("summary");
+                    hourDetailsEl.appendChild(hourSummaryEl);
+
+                    const hourEl = document.createElement("h3");
+                    const hourTextEl = document.createTextNode(`${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`);
+                    hourEl.appendChild(hourTextEl);
+                    hourSummaryEl.appendChild(hourEl);
+
+                    const hourListEl = document.createElement("ul");
+                    hourDetailsEl.appendChild(hourListEl);
+
+                    currentDateEl.appendChild(hourDetailsEl);
+                    currentHourEl = hourListEl;
+                }
+
+                const profileIndex = event[1];
+                const username = profiles[profileIndex].username;
+
+                let eventItemEl = document.createElement("li");
+
+                if (!currentTimeEl || date.getTime() !== prevDate.getTime()) {
+                    // different instance of time
+
+                    const bEl = document.createElement("b");
+                    const timeEl = document.createTextNode(DateTimeFormat.format(date) + " ");
+                    bEl.appendChild(timeEl);
+                    eventItemEl.appendChild(bEl);
+
+                    if (date.getTime() === timeline[i + 1][0].getTime()) {
+                        // current time instant has multiple events
+
+                        const timeListEl = document.createElement("ul");
+                        eventItemEl.appendChild(timeListEl);
+                        currentTimeEl = timeListEl;
+
+                        currentHourEl.appendChild(eventItemEl);
+                        eventItemEl = document.createElement("li");
+                    } else {
+                        // current time instant only has one event
+                        currentTimeEl = null;
+                    }
+                }
+
+                const spanEl = document.createElement("span");
+                spanEl.setAttribute("class", `p${profileIndex}`);
+                const b2El = document.createElement("b");
+                spanEl.appendChild(b2El);
+                const usernameEl = document.createTextNode(username);
+                b2El.appendChild(usernameEl);
+
+                const eventEl = document.createTextNode(" " + event[2]);
+
+                eventItemEl.appendChild(spanEl);
+                eventItemEl.appendChild(eventEl);
+
+                (currentTimeEl || currentHourEl).appendChild(eventItemEl);
+
+                prevDate = date;
+            }
+        }
+
+        function sameDay(d1, d2) {
+            return d1.getDate() === d2.getDate() &&
+                d1.getMonth() === d2.getMonth() &&
+                d1.getFullYear() === d2.getFullYear();
+        }
+    </script>
+
+</body>
+
+</html>
