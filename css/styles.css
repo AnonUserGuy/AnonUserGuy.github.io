@@ -1,10 +1,24 @@
 body {
     background-color: powderblue;
-    font-family: Comic Sans MS, Comic Sans, sans-serif;
+    font-family: "Comic Sans MS", "Comic Sans", sans-serif;
     text-align: center;
 }
 
-summary > h1, summary > h2, summary > h3 {
+summary {
+    position: sticky;
+    top: 0;
+    background-color: lightblue;
+    z-index: 5;
+}
+
+details>details>summary {
+    top: 53px;
+    z-index: 0;
+}
+
+summary>h1,
+summary>h2,
+summary>h3 {
     display: inline-block;
     margin-bottom: 0px;
 }
@@ -13,7 +27,8 @@ input[type="file"] {
     background-color: LightSteelBlue;
 }
 
-.section, .section-timeline {
+.section,
+.section-timeline {
     padding: 3px;
     background-color: lightblue;
     width: 600px;
@@ -32,6 +47,12 @@ input[type="file"] {
     background-color: LightSteelBlue;
     width: 300px;
     margin: auto;
+    margin-bottom: 5px;
+}
+
+.selector>p {
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 
 .dot {
@@ -39,4 +60,19 @@ input[type="file"] {
     overflow: hidden;
     bottom: 0px;
     left: 0px;
+}
+
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.p {
+    text-shadow: 1px 1px 0 #000;
+}
+
+abbr {
+    cursor: help;
 }

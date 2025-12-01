@@ -21,7 +21,7 @@ async function getMinecraftUsernamesFromUuids(uuids) {
                 if (response.ok) {
                     data = await response.json();
                     usernames[uuid] = data.username;
-                } else if (response.status === 400) {
+                } else if (response.status === 404) {
                     usernames[uuid] = "";
                 }
             }).finally(() => {

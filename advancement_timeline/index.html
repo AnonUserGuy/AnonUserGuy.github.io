@@ -4,7 +4,8 @@
 <head>
     <title>Advancement Timeline Generator</title>
     <link rel="stylesheet" href="../css/styles.css">
-    <script src="../js/add_dot.js"></script>
+    <style id="generatedStyles"></style>
+    <script src="../js/global.js"></script>
 
     <script src="../js/get_minecraft_usernames_from_uuids.js"></script>
 </head>
@@ -14,14 +15,23 @@
         <a href="../">&lt-- go back</a>
     </div>
     <div class="section">
-        <p>Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get your advancement timeline for that world!</p>
+        <p>Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get
+            your advancement timeline for that world!</p>
         <input id="uploadInput" type="file" accept="application/json" multiple />
+        <input id="resetInput" type="button" value="reset timeline" />
     </div>
 
     <div class="section-timeline" id="timelineDiv" hidden></div>
 
+    <div>
+        <p><a href="https://youtu.be/cPJUBQd-PNM" target="_blank">
+                <img src="../media/images/revenge.jpg" alt="revenge minecraft music video" height="120">
+            </a></p>
+        <p>brought to you by <i>Minecraft!</i></p>
+    </div>
+
     <script>
-        const COLORS = ["red", "Coral", "green", "blue", "purple"];
+        const bigMargin = 53;
         const DateTimeFormat = new Intl.DateTimeFormat(undefined, {
             dateStyle: "short",
             timeStyle: "long"
@@ -30,15 +40,12 @@
             dateStyle: "full"
         });
         const uploadInput = document.getElementById("uploadInput");
+        const resetInput = document.getElementById("resetInput");
         const timelineDiv = document.getElementById("timelineDiv");
+        const styleEl = document.getElementById("generatedStyles");
 
-        const timeline = [];
+        let timeline = [];
         const profiles = [];
-
-        var s = document.createElement("style");
-        s.type = "text/css";
-        s.innerText = COLORS.map((color, i) => `.p${i} {color: ${color};}`).join(" ");
-        document.head.appendChild(s);
 
         function promiseFileAsText(file) {
             const reader = new FileReader();
@@ -68,10 +75,23 @@
         function eventsAreDuplicates(event1, event2) {
             return event1[0].getTime() === event2[0].getTime() && event1[1] === event2[1] && event1[2] === event2[2];
         }
+        function sameDay(d1, d2) {
+            return d1.getDate() === d2.getDate() &&
+                d1.getMonth() === d2.getMonth() &&
+                d1.getFullYear() === d2.getFullYear();
+        }
 
         uploadInput.addEventListener("change", async () => {
+            loading(true);
             await updateTimeline();
             timelinePrint();
+            loading(false);
+        });
+
+        resetInput.addEventListener("click", () => {
+            timelineDiv.setAttribute("hidden", "");
+            timelineDiv.replaceChildren();
+            timeline = [];
         });
 
         async function updateTimeline() {
@@ -80,7 +100,9 @@
             const uuids = files.map(file => file.name.replace(/(.*)\..*/, "$1"));
             const usernamesPromise = getMinecraftUsernamesFromUuids(uuids).then((usernames) => {
                 for (let i = 0; i < usernames.length; i++) {
-                    profiles[profileIndices[i]].username = usernames[i];
+                    const profile = profiles[profileIndices[i]];
+                    profile.username = usernames[i] || `<user #${profileIndices[i]}>`;
+                    profile.nameless = !usernames[i];
                 }
             });
             const profileIndices = [];
@@ -107,7 +129,7 @@
                         if (criterion == "has_the_recipe") {
                             event = entry.replace(/\w+:recipes\/\w+\/(\w+)/, "Has recipe: $1")
                         } else if (!entry.startsWith('minecraft')) {
-                            if (criterion.startsWith('has') && criterion !== "has_ingredient" && criterion !== "has_item") {
+                            if (criterion.startsWith('has') && criterion !== "has_ingredient" && !criterion.startsWith("has_item")) {
                                 event = criterion;
                             } else {
                                 const match = entry.match(/^(\w+):.*?\/(\w+)$/);
@@ -153,14 +175,24 @@
             removeDuplicateEvents(timeline);
 
             await usernamesPromise;
-            console.log("all files read!");
         }
 
-        function timelinePrint() {
-            if (timelineDiv.hasAttribute("hidden")) {
-                timelineDiv.removeAttribute("hidden");
-            }
 
+        function focusDetailsIfWentOffscreen(margin, event) {
+            if (event.newState !== "open" && event.target.getBoundingClientRect().y < margin) {
+                event.target.scrollIntoView();
+                if (margin) window.scrollBy(0, -margin);
+            }
+        }
+        const focusDetailsIfWentOffscreenDate = focusDetailsIfWentOffscreen.bind(this, 0);
+        const focusDetailsIfWentOffscreenHour = focusDetailsIfWentOffscreen.bind(this, bigMargin);
+
+        function timelinePrint() {
+            if (timeline.length <= 0) return;
+
+            styleEl.innerText = profiles.map((profile, i) => `.p${i} {color: hsl(${i / profiles.length}turn 100% 50%);}`).join(" ");
+
+            timelineDiv.removeAttribute("hidden");
             timelineDiv.replaceChildren();
 
             let prevDate = new Date(0);
@@ -172,55 +204,48 @@
                 const date = event[0];
                 if (!sameDay(date, prevDate)) {
                     // different day
-                    const dateDetailsEl = document.createElement("details");
-                    dateDetailsEl.setAttribute("open", "");
-                    dateDetailsEl.setAttribute("id", `date${i}`);
-                    const dateSummaryEl = document.createElement("summary");
-                    dateDetailsEl.appendChild(dateSummaryEl);
 
-                    const dateEl = document.createElement("h2");
-                    const dateTextEl = document.createTextNode(DateFormat.format(date));
-                    dateEl.appendChild(dateTextEl);
-                    dateSummaryEl.appendChild(dateEl);
-
+                    const dateDetailsEl = document.createElementEX("details", { "open": "", "id": `date${i}` }, [
+                        document.createElementEX("summary", {}, [
+                            document.createElementEX("h2", {}, [
+                                DateFormat.format(date)
+                            ])
+                        ])
+                    ])
+                    dateDetailsEl.addEventListener("toggle", focusDetailsIfWentOffscreenDate);
                     timelineDiv.appendChild(dateDetailsEl);
                     currentDateEl = dateDetailsEl;
                 }
                 const hour = date.getHours();
                 if (!sameDay(date, prevDate) || hour !== prevDate.getHours()) {
                     // different hour
-                    const hourDetailsEl = document.createElement("details");
-                    hourDetailsEl.setAttribute("open", "");
-                    hourDetailsEl.setAttribute("id", `hour${i}`);
-                    const hourSummaryEl = document.createElement("summary");
-                    hourDetailsEl.appendChild(hourSummaryEl);
-
-                    const hourEl = document.createElement("h3");
-                    const hourTextEl = document.createTextNode(`${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`);
-                    hourEl.appendChild(hourTextEl);
-                    hourSummaryEl.appendChild(hourEl);
 
                     const hourListEl = document.createElement("ul");
-                    hourDetailsEl.appendChild(hourListEl);
-
+                    const hourDetailsEl = document.createElementEX("details", { "open": "", "id": `hour${i}` }, [
+                        document.createElementEX("summary", {}, [
+                            document.createElementEX("h3", {}, [
+                                `${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`
+                            ])
+                        ]),
+                        hourListEl
+                    ])
+                    hourDetailsEl.addEventListener("toggle", focusDetailsIfWentOffscreenHour);
                     currentDateEl.appendChild(hourDetailsEl);
                     currentHourEl = hourListEl;
                 }
 
                 const profileIndex = event[1];
-                const username = profiles[profileIndex].username;
+                const profile = profiles[profileIndex];
 
                 let eventItemEl = document.createElement("li");
 
                 if (!currentTimeEl || date.getTime() !== prevDate.getTime()) {
                     // different instance of time
 
-                    const bEl = document.createElement("b");
-                    const timeEl = document.createTextNode(DateTimeFormat.format(date) + " ");
-                    bEl.appendChild(timeEl);
-                    eventItemEl.appendChild(bEl);
+                    const timestampEl = document.createElementEX("b", {}, [DateTimeFormat.format(date) + " "]);
+                    eventItemEl.appendChild(timestampEl);
 
-                    if (i + 1 >= timeline.length || date.getTime() === timeline[i + 1][0].getTime()) {
+                    if (i + 1 < timeline.length && date.getTime() === timeline[i + 1][0].getTime()) {
                         // current time instant has multiple events
 
                         const timeListEl = document.createElement("ul");
@@ -235,13 +260,11 @@
                     }
                 }
 
-                const spanEl = document.createElement("span");
-                spanEl.setAttribute("class", `p${profileIndex}`);
-                const b2El = document.createElement("b");
-                spanEl.appendChild(b2El);
-                const usernameEl = document.createTextNode(username);
-                b2El.appendChild(usernameEl);
-
+                const spanEl = document.createElementEX(profile.nameless ? "abbr" : "span", {
+                    "title": profile.uuid,
+                    "class": `p p${profileIndex}`
+                },
+                    [profile.username]);
                 const eventEl = document.createTextNode(" " + event[2]);
 
                 eventItemEl.appendChild(spanEl);
@@ -251,12 +274,6 @@
 
                 prevDate = date;
             }
-        }
-
-        function sameDay(d1, d2) {
-            return d1.getDate() === d2.getDate() &&
-                d1.getMonth() === d2.getMonth() &&
-                d1.getFullYear() === d2.getFullYear();
         }
     </script>
 
