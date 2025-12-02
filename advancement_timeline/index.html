@@ -15,8 +15,10 @@
         <a href="../">&lt-- go back</a>
     </div>
     <div class="section">
-        <p>Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get
-            your advancement timeline for that world!</p>
+        <p>
+            Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get
+            your advancement timeline for that world!
+        </p>
         <input id="uploadInput" type="file" accept="application/json" multiple />
         <input id="resetInput" type="button" value="reset timeline" />
     </div>
@@ -24,9 +26,11 @@
     <div class="section-timeline" id="timelineDiv" hidden></div>
 
     <div>
-        <p><a href="https://youtu.be/cPJUBQd-PNM" target="_blank">
+        <p>
+            <a href="https://youtu.be/cPJUBQd-PNM" target="_blank">
                 <img src="../media/images/revenge.jpg" alt="revenge minecraft music video" height="120">
-            </a></p>
+            </a>
+        </p>
         <p>brought to you by <i>Minecraft!</i></p>
     </div>
 
@@ -137,7 +141,7 @@
                                     if (match[2] == criterion) {
                                         event = `${match[1]}:${match[2]}`
                                     } else {
-                                        event = `${match[1]}:${match[2]},${criterion}`
+                                        event = `${match[1]}:${match[2]}, ${criterion}`
                                     }
                                 } else {
                                     event = `${entry},${criterion}`;
@@ -166,7 +170,8 @@
                         } else {
                             event = criterion;
                         }
-
+                        
+                        event = event.replace("_", "\u200B_\u200B");
                         timeline.push([date, profileIndex, event]);
                     }
                 }
@@ -178,14 +183,20 @@
         }
 
 
-        function focusDetailsIfWentOffscreen(margin, event) {
-            if (event.newState !== "open" && event.target.getBoundingClientRect().y < margin) {
-                event.target.scrollIntoView();
-                if (margin) window.scrollBy(0, -margin);
+        function focusDetailsIfWentOffscreen(event) {
+            const detailsEl = event.currentTarget.parentNode;
+            if (detailsEl.open) {
+                event.preventDefault();
+                detailsEl.open = false;
+
+                const margin = parseInt(getComputedStyle(event.currentTarget).top);
+                if (event.target.getBoundingClientRect().y < margin) {
+                    event.target.scrollIntoView();
+                    if (margin) window.scrollBy(0, -margin);
+                }
             }
         }
-        const focusDetailsIfWentOffscreenDate = focusDetailsIfWentOffscreen.bind(this, 0);
-        const focusDetailsIfWentOffscreenHour = focusDetailsIfWentOffscreen.bind(this, bigMargin);
+
 
         function timelinePrint() {
             if (timeline.length <= 0) return;
@@ -205,14 +216,13 @@
                 if (!sameDay(date, prevDate)) {
                     // different day
 
-                    const dateDetailsEl = document.createElementEX("details", { "open": "", "id": `date${i}` }, [
-                        document.createElementEX("summary", {}, [
-                            document.createElementEX("h2", {}, [
-                                DateFormat.format(date)
-                            ])
+                    const dateSummaryEl = document.createElementEX("summary", {}, [
+                        document.createElementEX("h2", {}, [
+                            DateFormat.format(date)
                         ])
-                    ])
-                    dateDetailsEl.addEventListener("toggle", focusDetailsIfWentOffscreenDate);
+                    ]);
+                    const dateDetailsEl = document.createElementEX("details", { "open": "", "id": `date${i}` }, [dateSummaryEl]);
+                    dateSummaryEl.addEventListener("click", focusDetailsIfWentOffscreen);
                     timelineDiv.appendChild(dateDetailsEl);
                     currentDateEl = dateDetailsEl;
                 }
@@ -220,16 +230,17 @@
                 if (!sameDay(date, prevDate) || hour !== prevDate.getHours()) {
                     // different hour
 
+                    const hourSummaryEl = document.createElementEX("summary", {}, [
+                        document.createElementEX("h3", {}, [
+                            `${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`
+                        ])
+                    ]);
                     const hourListEl = document.createElement("ul");
                     const hourDetailsEl = document.createElementEX("details", { "open": "", "id": `hour${i}` }, [
-                        document.createElementEX("summary", {}, [
-                            document.createElementEX("h3", {}, [
-                                `${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`
-                            ])
-                        ]),
+                        hourSummaryEl,
                         hourListEl
                     ])
-                    hourDetailsEl.addEventListener("toggle", focusDetailsIfWentOffscreenHour);
+                    hourSummaryEl.addEventListener("click", focusDetailsIfWentOffscreen);
                     currentDateEl.appendChild(hourDetailsEl);
                     currentHourEl = hourListEl;
                 }
