@@ -18,6 +18,7 @@ Document.prototype.createElementEX = function (tagName, attributes = {}, childre
 
 const dotEl = document.createElementEX('div', { "class": "dot" }, [
     document.createElementEX('iframe', {
+        "title": "the dot",
         "src": "https://global-mind.org/gcpdot/gcp.html",
         "height": "48",
         "width": "48",

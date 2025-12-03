@@ -2,6 +2,8 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Advancement Timeline Generator</title>
     <link rel="stylesheet" href="../css/styles.css">
     <style id="generatedStyles"></style>
@@ -12,8 +14,15 @@
 
 <body>
     <div>
-        <a href="../">&lt-- go back</a>
+        <div>
+            <a href="../">&lt-- go back</a>
+        </div>
+        <div class="right-button">
+            <label for="exampleCountInput"><input id="exampleInput" type="button" value="add example player(s)" /></label>
+            <input id="exampleCountInput" type="number" aria-label="example player count" min="1" max="999" value="1" />
+        </div>
     </div>
+
     <div class="section">
         <p>
             Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get
@@ -45,6 +54,8 @@
         });
         const uploadInput = document.getElementById("uploadInput");
         const resetInput = document.getElementById("resetInput");
+        const exampleInput = document.getElementById("exampleInput");
+        const exampleCountInput = document.getElementById("exampleCountInput");
         const timelineDiv = document.getElementById("timelineDiv");
         const styleEl = document.getElementById("generatedStyles");
 
@@ -97,6 +108,42 @@
             timelineDiv.replaceChildren();
             timeline = [];
         });
+
+        exampleInput.addEventListener("click", () => {
+            addRandomPlayers(exampleCountInput.value);
+            timelinePrint();
+        });
+
+        function addRandomPlayers(amount) {
+            const MAX_UNIX_TIME = 8640000000000000;
+            const minDate = timeline.length ? timeline[0][0] : new Date(Math.random() * MAX_UNIX_TIME);
+            const maxDate = timeline.length ? timeline[timeline.length - 1][0] : new Date(minDate.getTime() + 1000 * 60 * 60 * 24 * 4);
+
+            for (let h = 0; h < amount; h++) {
+                const profileIndex = profiles.length;
+                profiles.push({
+                    uuid: "none",
+                    username: `demo${profileIndex}`,
+                    nameless: false
+                })
+
+                const eventCount = Math.random() * 100 + 1;
+                for (let i = 0; i < eventCount;) {
+
+                    const concurrentEventCount = Math.max(Math.random() * 20 - 15, 1);
+                    const date = randomDateInRange(minDate, maxDate);
+                    for (let j = 0; j < concurrentEventCount; j++) {
+                        timeline.push([date, profileIndex, `event${i}`]);
+                        i++;
+                    }
+                }
+            }
+            timeline.sort((a, b) => a[0] - b[0]);
+        }
+
+        function randomDateInRange(from, to) {
+            return new Date(from.getTime() + Math.random() * (to.getTime() - from.getTime()));
+        }
 
         async function updateTimeline() {
             const files = Array.from(uploadInput.files);
@@ -170,7 +217,7 @@
                         } else {
                             event = criterion;
                         }
-                        
+
                         event = event.replace("_", "\u200B_\u200B");
                         timeline.push([date, profileIndex, event]);
                     }

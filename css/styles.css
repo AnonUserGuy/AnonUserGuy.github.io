@@ -27,6 +27,30 @@ input[type="file"] {
     background-color: LightSteelBlue;
 }
 
+.text-entries {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.right-button {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+}
+
+.right-button > input[type="number"] {
+    width: 40px;
+}
+
+@media (max-width: 500px) {
+  .right-button {
+    position: static;
+    text-align: right;
+  }
+}
+
 .section,
 .section-timeline {
     padding: 3px;
@@ -48,6 +72,7 @@ input[type="file"] {
     width: 300px;
     margin: auto;
     margin-bottom: 5px;
+    max-width: 100%;
 }
 
 .selector>p {
@@ -60,6 +85,7 @@ input[type="file"] {
     overflow: hidden;
     bottom: 0px;
     left: 0px;
+    z-index: -1;
 }
 
 .loading {

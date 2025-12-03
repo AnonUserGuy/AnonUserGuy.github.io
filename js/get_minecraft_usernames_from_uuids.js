@@ -39,5 +39,5 @@ async function getMinecraftUsernamesFromUuids(uuids) {
 }
 
 async function getMinecraftUsernameFromUuid(uuid) {
-    return (await getMinecraftUsernamesFromUuids([uuid]))[0]
+    return (await getMinecraftUsernamesFromUuids([uuid]))[0];
 }

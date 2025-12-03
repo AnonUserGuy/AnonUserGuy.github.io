@@ -2,6 +2,8 @@
 <html>
 
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Sub to Offset Converter</title>
     <link rel="stylesheet" href="../css/styles.css">
     <script src="../js/global.js"></script>
@@ -14,10 +16,16 @@
 
     <div class="section">
         <h2>Original</h2>
-        <p>
-            Sub: <input type="text" id="subOG" value="60 FA 28 02" onkeyup="subInput()">
-            Offset: <input type="text" id="offOG" value="0" onkeyup="offsetInput()">
-        </p>
+        <div class="text-entries">
+            <div>
+                <label for="subOG">Sub: </label> 
+                <input type="text" id="subOG" value="60 FA 28 02" onkeyup="subInput()">
+            </div>
+            <div>
+                <label for="offOG">Offset: </label> 
+                <input type="text" id="offOG" value="0" onkeyup="offsetInput()">
+            </div>
+        </div>
         <p>
             <input type="checkbox" id="littleEndian" checked="true" onchange="autoInput()">
             <label for="littleEndian">Little Endian?</label>
@@ -26,10 +34,16 @@
 
     <div class="section">
         <h2>Find</h2>
-        <p>
-            Sub: <input type="text" id="sub" value="" onkeyup="subInput()">
-            Offset: <input type="text" id="offset" value="0" onkeyup="offsetInput()"> 
-        </p>
+        <div class="text-entries">
+            <div>
+                <label for="sub">Sub: </label>
+                <input type="text" id="sub" value="" onkeyup="subInput()">
+            </div>
+            <div>
+                <label for="offset">Offset: </label> 
+                <input type="text" id="offset" value="0" onkeyup="offsetInput()">
+            </div>
+        </div>
         <p>
             <button onclick="subInput()">Convert to Offset</button>
             <button onclick="offsetInput()">Convert to Sub</button>
