@@ -9,6 +9,7 @@ summary {
     top: 0;
     background-color: lightblue;
     z-index: 5;
+    cursor: pointer;
 }
 
 details>details>summary {
@@ -25,6 +26,7 @@ summary>h3 {
 
 input[type="file"] {
     background-color: LightSteelBlue;
+    max-width: 100%
 }
 
 .text-entries {
@@ -40,10 +42,6 @@ input[type="file"] {
     top: 8px;
 }
 
-.right-button > input[type="number"] {
-    width: 40px;
-}
-
 @media (max-width: 500px) {
   .right-button {
     position: static;
@@ -51,12 +49,16 @@ input[type="file"] {
   }
 }
 
+.right-button > input[type="number"] {
+    width: 40px;
+}
+
 .section,
 .section-timeline {
     padding: 3px;
     background-color: lightblue;
     width: 600px;
-    max-width: 100%;
+    max-width: calc(100% - 8px);
     margin: auto;
     margin-bottom: 5px;
 }
@@ -83,8 +85,8 @@ input[type="file"] {
 .dot {
     position: fixed;
     overflow: hidden;
-    bottom: 0px;
-    left: 0px;
+    bottom: 8px;
+    left: 8px;
     z-index: -1;
 }
 
@@ -97,6 +99,13 @@ input[type="file"] {
 
 .p {
     text-shadow: 1px 1px 0 #000;
+    text-decoration: none;
+}
+
+.pn {
+    font-style: italic;
+    text-decoration: underline;
+    text-decoration-style: dotted;
 }
 
 abbr {

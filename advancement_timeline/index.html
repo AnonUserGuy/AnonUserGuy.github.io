@@ -2,6 +2,16 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="description" content="View the history of a Minecraft world, hour by hour, using its advancements!">
+    <meta name="keywords" content="Minecraft">
+    <meta name="author" content="AnonUserGuy">
+
+    <meta property="og:title" content="Advancement Timeline Generator">
+    <meta property="og:description" content="View the history of a Minecraft world, hour by hour, using its advancements!">
+    <meta property="og:image" content="https://anonuserguy.github.io/media/images/revenge.jpg" />
+    <meta property="og:url" content="https://anonuserguy.github.io/advancement_timeline/">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Advancement Timeline Generator</title>
@@ -18,7 +28,9 @@
             <a href="../">&lt-- go back</a>
         </div>
         <div class="right-button">
-            <label for="exampleCountInput"><input id="exampleInput" type="button" value="add example player(s)" /></label>
+            <label for="exampleCountInput">
+                <input id="exampleInput" type="button" value="add example player(s)" />
+            </label>
             <input id="exampleCountInput" type="number" aria-label="example player count" min="1" max="999" value="1" />
         </div>
     </div>
@@ -32,7 +44,9 @@
         <input id="resetInput" type="button" value="reset timeline" />
     </div>
 
-    <div class="section-timeline" id="timelineDiv" hidden></div>
+    <div class="section-timeline" id="timelineDivOuter" hidden>
+        <div id="timelineDiv"></div>
+    </div>
 
     <div>
         <p>
@@ -56,6 +70,7 @@
         const resetInput = document.getElementById("resetInput");
         const exampleInput = document.getElementById("exampleInput");
         const exampleCountInput = document.getElementById("exampleCountInput");
+        const timelineDivOuter = document.getElementById("timelineDivOuter");
         const timelineDiv = document.getElementById("timelineDiv");
         const styleEl = document.getElementById("generatedStyles");
 
@@ -104,7 +119,7 @@
         });
 
         resetInput.addEventListener("click", () => {
-            timelineDiv.setAttribute("hidden", "");
+            timelineDivOuter.setAttribute("hidden", "");
             timelineDiv.replaceChildren();
             timeline = [];
         });
@@ -122,9 +137,10 @@
             for (let h = 0; h < amount; h++) {
                 const profileIndex = profiles.length;
                 profiles.push({
-                    uuid: "none",
+                    uuid: "none!",
                     username: `demo${profileIndex}`,
-                    nameless: false
+                    nameless: false,
+                    generated: true
                 })
 
                 const eventCount = Math.random() * 100 + 1;
@@ -132,7 +148,7 @@
 
                     const concurrentEventCount = Math.max(Math.random() * 20 - 15, 1);
                     const date = randomDateInRange(minDate, maxDate);
-                    for (let j = 0; j < concurrentEventCount; j++) {
+                    for (let j = 0; j < concurrentEventCount && i < eventCount; j++) {
                         timeline.push([date, profileIndex, `event${i}`]);
                         i++;
                     }
@@ -161,7 +177,10 @@
                 let profileIndex = profiles.findIndex(profile => profile.uuid === uuids[i]);
                 if (profileIndex === -1) {
                     profileIndex = profiles.length;
-                    profiles.push({ uuid: uuids[i] });
+                    profiles.push({
+                        uuid: uuids[i],
+                        generated: false
+                    });
                 }
                 profileIndices[i] = profileIndex;
             }
@@ -236,10 +255,10 @@
                 event.preventDefault();
                 detailsEl.open = false;
 
-                const margin = parseInt(getComputedStyle(event.currentTarget).top);
+                const margin = parseFloat(getComputedStyle(event.currentTarget).top) + parseFloat(getComputedStyle(event.currentTarget.firstElementChild).marginTop);
                 if (event.target.getBoundingClientRect().y < margin) {
                     event.target.scrollIntoView();
-                    if (margin) window.scrollBy(0, -margin);
+                    window.scrollBy(0, -margin);
                 }
             }
         }
@@ -248,9 +267,10 @@
         function timelinePrint() {
             if (timeline.length <= 0) return;
 
-            styleEl.innerText = profiles.map((profile, i) => `.p${i} {color: hsl(${i / profiles.length}turn 100% 50%);}`).join(" ");
+            styleEl.innerText = profiles.map((profile, i) =>
+                `.p${i} {color: hsl(${i / profiles.length}turn 100% 50%);} a.p${i}:hover {color: hsl(${i / profiles.length}turn 75% 75%);}`).join(" ");
 
-            timelineDiv.removeAttribute("hidden");
+            timelineDivOuter.removeAttribute("hidden");
             timelineDiv.replaceChildren();
 
             let prevDate = new Date(0);
@@ -318,11 +338,16 @@
                     }
                 }
 
-                const spanEl = document.createElementEX(profile.nameless ? "abbr" : "span", {
-                    "title": profile.uuid,
-                    "class": `p p${profileIndex}`
-                },
-                    [profile.username]);
+
+                const spanEl = !profile.generated ?
+                    document.createElementEX("a", {
+                        "href": `https://namemc.com/profile/${profile.uuid}`,
+                        "target": "_blank"
+                    }, [profile.username])
+                    : document.createElementEX("span", {}, [profile.username]);
+                spanEl.setAttribute("title", profile.uuid);
+                spanEl.setAttribute("class", `p${profile.nameless ? " pn" : ""} p${profileIndex}`);
+
                 const eventEl = document.createTextNode(" " + event[2]);
 
                 eventItemEl.appendChild(spanEl);
