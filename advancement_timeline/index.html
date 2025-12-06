@@ -8,8 +8,9 @@
     <meta name="author" content="AnonUserGuy">
 
     <meta property="og:title" content="Advancement Timeline Generator">
-    <meta property="og:description" content="View the history of a Minecraft world, hour by hour, using its advancements!">
-    <meta property="og:image" content="https://anonuserguy.github.io/media/images/revenge.jpg" />
+    <meta property="og:description"
+        content="View the history of a Minecraft world, hour by hour, using its advancements!">
+    <meta property="og:image" content="https://anonuserguy.github.io/media/images/revenge.jpg">
     <meta property="og:url" content="https://anonuserguy.github.io/advancement_timeline/">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,11 +41,18 @@
             Within a Minecraft world folder, locate the "advancement" subfolder and upload ALL files within it to get
             your advancement timeline for that world!
         </p>
-        <input id="uploadInput" type="file" accept="application/json" multiple />
-        <input id="resetInput" type="button" value="reset timeline" />
+        <p>
+            <input id="uploadInput" type="file" accept="application/json" multiple />
+            <input id="resetInput" type="button" value="reset timeline" />
+        </p>
     </div>
 
     <div class="section-timeline" id="timelineDivOuter" hidden>
+        <div class="timeline-buttons-outer">
+            <div class="timeline-buttons">
+                <input id="openCloseInput" type="button" value="close all" />
+            </div>
+        </div>
         <div id="timelineDiv"></div>
     </div>
 
@@ -72,10 +80,15 @@
         const exampleCountInput = document.getElementById("exampleCountInput");
         const timelineDivOuter = document.getElementById("timelineDivOuter");
         const timelineDiv = document.getElementById("timelineDiv");
+        const openCloseInput = document.getElementById("openCloseInput");
         const styleEl = document.getElementById("generatedStyles");
 
         let timeline = [];
         const profiles = [];
+
+        let detailses = [];
+        let detailsesAllOpen = true;
+        let lastDetails = null;
 
         function promiseFileAsText(file) {
             const reader = new FileReader();
@@ -120,7 +133,6 @@
 
         resetInput.addEventListener("click", () => {
             timelineDivOuter.setAttribute("hidden", "");
-            timelineDiv.replaceChildren();
             timeline = [];
         });
 
@@ -129,10 +141,22 @@
             timelinePrint();
         });
 
+        openCloseInput.addEventListener("click", () => {
+            detailsesAllOpen = !detailsesAllOpen;
+            for (const detailsEl of detailses) {
+                detailsEl.open = detailsesAllOpen;
+            }
+            openCloseInput.value = detailsesAllOpen ? "close all" : "open all";
+            
+            if (detailsesAllOpen && lastDetails) {
+                lastDetails.scrollIntoView();
+            }
+        });
+
         function addRandomPlayers(amount) {
             const MAX_UNIX_TIME = 8640000000000000;
-            const minDate = timeline.length ? timeline[0][0] : new Date(Math.random() * MAX_UNIX_TIME);
-            const maxDate = timeline.length ? timeline[timeline.length - 1][0] : new Date(minDate.getTime() + 1000 * 60 * 60 * 24 * 4);
+            const maxDate = timeline.length ? timeline[timeline.length - 1][0] : new Date(Math.random() * MAX_UNIX_TIME);
+            const minDate = timeline.length ? timeline[0][0] : new Date(maxDate.getTime() - 1000 * 60 * 60 * 24 * 4);
 
             for (let h = 0; h < amount; h++) {
                 const profileIndex = profiles.length;
@@ -251,6 +275,8 @@
 
         function focusDetailsIfWentOffscreen(event) {
             const detailsEl = event.currentTarget.parentNode;
+            lastDetails = detailsEl;
+
             if (detailsEl.open) {
                 event.preventDefault();
                 detailsEl.open = false;
@@ -272,6 +298,8 @@
 
             timelineDivOuter.removeAttribute("hidden");
             timelineDiv.replaceChildren();
+            detailses = [];
+            lastDetails = null;
 
             let prevDate = new Date(0);
             let currentDateEl = null;
@@ -288,9 +316,11 @@
                             DateFormat.format(date)
                         ])
                     ]);
-                    const dateDetailsEl = document.createElementEX("details", { "open": "", "id": `date${i}` }, [dateSummaryEl]);
+                    const dateDetailsEl = document.createElementEX("details", { "id": `date${i}` }, [dateSummaryEl]);
+                    dateDetailsEl.open = detailsesAllOpen;
                     dateSummaryEl.addEventListener("click", focusDetailsIfWentOffscreen);
                     timelineDiv.appendChild(dateDetailsEl);
+                    detailses.push(dateDetailsEl);
                     currentDateEl = dateDetailsEl;
                 }
                 const hour = date.getHours();
@@ -303,12 +333,14 @@
                         ])
                     ]);
                     const hourListEl = document.createElement("ul");
-                    const hourDetailsEl = document.createElementEX("details", { "open": "", "id": `hour${i}` }, [
+                    const hourDetailsEl = document.createElementEX("details", { "id": `hour${i}` }, [
                         hourSummaryEl,
                         hourListEl
                     ])
+                    hourDetailsEl.open = detailsesAllOpen;
                     hourSummaryEl.addEventListener("click", focusDetailsIfWentOffscreen);
                     currentDateEl.appendChild(hourDetailsEl);
+                    detailses.push(hourDetailsEl);
                     currentHourEl = hourListEl;
                 }
 

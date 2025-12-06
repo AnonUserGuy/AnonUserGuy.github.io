@@ -8,19 +8,28 @@ summary {
     position: sticky;
     top: 0;
     background-color: lightblue;
-    z-index: 5;
+    z-index: 1;
     cursor: pointer;
+    height: 53px; /* i am discontent with this solution */
 }
 
 details>details>summary {
     top: 53px;
+    height: revert;
     z-index: 0;
 }
 
 summary>h1,
 summary>h2,
-summary>h3 {
+summary>h3,
+summary>h4,
+summary>h5,
+summary>h6 {
     display: inline-block;
+    margin-bottom: 0px;
+}
+
+details>ul {
     margin-bottom: 0px;
 }
 
@@ -43,18 +52,19 @@ input[type="file"] {
 }
 
 @media (max-width: 500px) {
-  .right-button {
-    position: static;
-    text-align: right;
-  }
+    .right-button {
+        position: static;
+        text-align: right;
+    }
 }
 
-.right-button > input[type="number"] {
+.right-button>input[type="number"] {
     width: 40px;
 }
 
 .section,
 .section-timeline {
+    position: relative;
     padding: 3px;
     background-color: lightblue;
     width: 600px;
@@ -65,7 +75,23 @@ input[type="file"] {
 
 .section-timeline {
     width: 900px;
+    padding-bottom: 19.92px;
     text-align: left;
+}
+
+.timeline-buttons-outer {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    height: 100%;
+    visibility: hidden;
+}
+
+.timeline-buttons {
+    position: sticky;
+    top: 8px;
+    z-index: 2;
+    visibility: visible;
 }
 
 .selector {
