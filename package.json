@@ -1,0 +1,20 @@
+{
+  "name": "anonuserguy.github.io",
+  "version": "1.0.0",
+  "description": "Webbed site",
+  "homepage": "https://github.com/AnonUserGuy/AnonUserGuy.github.io#readme",
+  "bugs": {
+    "url": "https://github.com/AnonUserGuy/AnonUserGuy.github.io/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnonUserGuy/AnonUserGuy.github.io.git"
+  },
+  "author": "AnonUserGuy",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
