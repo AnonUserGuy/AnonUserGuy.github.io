@@ -24,8 +24,8 @@ jobs:
       - name: 'Build Website'
         run: npm ci && npm run build
       - run: |
-        echo "Listing repo after build:"
-        ls -R .
+          echo "Listing repo after build:" 
+          ls -R .
       - name: 'Upload artifact'
         uses: actions/upload-pages-artifact@v4
         with:
