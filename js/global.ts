@@ -1,6 +1,8 @@
-tsh=s=>{for(var i=0,h=9;i<s.length;)h=Math.imul(h^s.charCodeAt(i++),9**9);return h^h>>>9}
+export interface Attributes {
+    [key: string]: string;
+}
 
-Document.prototype.createElementEX = function (tagName, attributes = {}, children = []) {
+export function createElementEX(tagName: string, attributes: Attributes = {}, children: (HTMLElement | string)[] = []) {
     const element = document.createElement(tagName);
     for (const attribute in attributes) {
         element.setAttribute(attribute, attributes[attribute]);
@@ -16,8 +18,8 @@ Document.prototype.createElementEX = function (tagName, attributes = {}, childre
     return element;
 }
 
-const dotEl = document.createElementEX('div', { "class": "dot" }, [
-    document.createElementEX('iframe', {
+export const dotEl = createElementEX('div', { "class": "dot" }, [
+    createElementEX('iframe', {
         "title": "the dot",
         "src": "https://global-mind.org/gcpdot/gcp.html",
         "height": "48",
@@ -29,7 +31,7 @@ const dotEl = document.createElementEX('div', { "class": "dot" }, [
     })
 ]);
 
-const loadingEl = document.createElementEX("img", {
+export const loadingEl = createElementEX("img", {
     "id": "loading",
     "class": "loading",
     "src": "../media/images/loading.gif",
@@ -42,7 +44,7 @@ window.onload = function () {
     document.body.appendChild(loadingEl);
 }
 
-function loading(bool) {
+export function loading(bool: boolean) {
     if (bool) {
         loadingEl.removeAttribute("hidden");
     } else {
