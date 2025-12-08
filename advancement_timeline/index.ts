@@ -98,6 +98,7 @@ function focusDetailsIfWentOffscreen(event: Event) {
     if (!event.currentTarget) return;
 
     const summaryEl = event.currentTarget as HTMLElement;
+    const headingEl = summaryEl.firstElementChild as HTMLHeadingElement;
     const detailsEl = summaryEl.parentNode as HTMLDetailsElement;
     lastDetails = detailsEl;
 
@@ -105,9 +106,9 @@ function focusDetailsIfWentOffscreen(event: Event) {
         event.preventDefault();
         detailsEl.open = false;
 
-        const margin = parseFloat(getComputedStyle(summaryEl).top) + parseFloat(getComputedStyle(summaryEl.firstElementChild!).marginTop);
-        if (summaryEl.getBoundingClientRect().y < margin) {
-            summaryEl.scrollIntoView();
+        const margin = parseFloat(getComputedStyle(summaryEl).top) + parseFloat(getComputedStyle(headingEl).marginTop);
+        if (headingEl.getBoundingClientRect().y < margin) {
+            headingEl.scrollIntoView();
             window.scrollBy(0, -margin);
         }
     }
