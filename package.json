@@ -12,9 +12,12 @@
   },
   "author": "AnonUserGuy",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && tsc-alias",
+    "build:watch": "concurrently --kill-others \"tsc -w\" \"tsc-alias -w\""
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
+    "tsc-alias": "^1.8.16",
     "typescript": "^5.9.3"
   }
 }

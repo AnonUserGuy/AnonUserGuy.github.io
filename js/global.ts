@@ -34,7 +34,7 @@ export const dotEl = createElementEX('div', { "class": "dot" }, [
 export const loadingEl = createElementEX("img", {
     "id": "loading",
     "class": "loading",
-    "src": "../media/images/loading.gif",
+    "src": "/media/images/loading.gif",
     "alt": "loading",
     "hidden": ""
 })
