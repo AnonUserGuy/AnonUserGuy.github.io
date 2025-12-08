@@ -23,7 +23,12 @@ jobs:
           node-version: '22'
       - name: 'Build Website'
         run: npm ci && npm run build
-      - run: |
+      - name: 'Remove Node Modules' 
+        uses: JesseTG/rm@v1.0.3
+        with:
+          path: ./node_modules
+      - name: 'Listing Website Contents'
+        run: |
           echo "Listing repo after build:" 
           ls -R .
       - name: 'Upload artifact'
