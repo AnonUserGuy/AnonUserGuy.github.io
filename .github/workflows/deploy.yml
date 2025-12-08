@@ -4,7 +4,7 @@ name: 'Deploy Website'
 on:
   push:
     branches: ['main']
-#
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -23,12 +23,13 @@ jobs:
           node-version: '22'
       - name: 'Build Website'
         run: npm ci && npm run build
-      - name: List dist contents
-        run: ls -R dist
+      - run: |
+          echo "Listing repo after build:" 
+          ls -R .
       - name: 'Upload artifact'
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./dist
+          path: ./
   # Deploy Job
   deploy:
     name: 'Deploy'

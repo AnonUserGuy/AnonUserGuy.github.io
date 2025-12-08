@@ -12,14 +12,9 @@
   },
   "author": "AnonUserGuy",
   "scripts": {
-    "build": "tsc && cpy \"src/**/*.{html,css,png,jpg,svg,ico,gif}\" --flat=false dist",
-    "start": "npm run build && live-server dist"
+    "build": "tsc"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "cpy-cli": "^6.0.0",
-    "live-server": "^1.2.2"
   }
 }

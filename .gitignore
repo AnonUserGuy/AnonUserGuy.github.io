@@ -1,4 +1,4 @@
 *.code-workspace
 *.bat
-dist/
+*.js
 node_modules/
