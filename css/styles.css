@@ -137,3 +137,8 @@ input[type="file"] {
 abbr {
     cursor: help;
 }
+
+.terraria-map {
+    background-color: black;
+    margin: 10px;
+}

@@ -2,6 +2,42 @@ export interface Attributes {
     [key: string]: string;
 }
 
+export function promiseFileAsText(file: File): Promise<string | null> {
+    const reader = new FileReader();
+
+    return new Promise((resolve, reject) => {
+        reader.onload = () => {
+            resolve(reader.result as string | null)
+        }
+        reader.onerror = () => {
+            reader.abort();
+            reject();
+        }
+        reader.readAsText(file);
+    });
+}
+
+export function promiseFileAsArrayBuffer(file: File): Promise<ArrayBuffer | null> {
+    const reader = new FileReader();
+
+    return new Promise((resolve, reject) => {
+        reader.onload = () => {
+            resolve(reader.result as ArrayBuffer | null)
+        }
+        reader.onerror = () => {
+            reader.abort();
+            reject();
+        }
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+export async function decompressBuffer(bytes: BufferSource, type: CompressionFormat) {
+  const decompressedStream = new Response(bytes).body!.pipeThrough(new DecompressionStream(type));
+  const buffer = await new Response(decompressedStream).arrayBuffer();
+  return buffer;
+}
+
 export function createElementEX(tagName: string, attributes: Attributes = {}, children: (HTMLElement | string)[] = []) {
     const element = document.createElement(tagName);
     for (const attribute in attributes) {
