@@ -5,15 +5,27 @@ const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const worldInfo = document.getElementById("worldInfo") as HTMLDivElement;
 
-const baseColor = document.getElementById("baseColor") as HTMLInputElement;
-const paintedColor = document.getElementById("paintedColor") as HTMLInputElement;
-const lightingColor = document.getElementById("lightingColor") as HTMLInputElement;
-
-baseColor.addEventListener("change", doRender);
-paintedColor.addEventListener("change", doRender);
-lightingColor.addEventListener("change", doRender);
+const layerOptions = document.getElementById("layerOptions") as HTMLDivElement;
 
 const worldMap = new WorldMap(canvas);
+
+
+WorldMap.layerNames.forEach((name, i) => {
+    const checkbox = global.createElementEX("input", {
+        "type": "checkbox",
+        "id": `layer${i}`,
+    }) as HTMLInputElement;
+    if (i !== WorldMap.layerNames.length - 1) checkbox.checked = true;
+    checkbox.addEventListener("click", doRender);
+    const label = global.createElementEX("label", {
+        "for": `layer${i}`
+    }, [name]) as HTMLLabelElement;
+
+    layerOptions.appendChild(global.createElementEX("div", {}, [
+        checkbox,
+        label
+    ]))
+})
 
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
@@ -22,6 +34,7 @@ uploadInput.addEventListener("change", async (event) => {
             const buffer = await global.promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
             const fileReader = new BinaryReader(new Uint8Array(buffer));
             await MapHelper.Load(fileReader, worldMap);
+            worldMap.renderLayers();
             doRender();
             getWorldInfo();
         } catch (e) {
@@ -32,8 +45,10 @@ uploadInput.addEventListener("change", async (event) => {
 });
 
 function doRender() {
-    worldMap.render(baseColor.checked, false && paintedColor.checked, lightingColor.checked);
-    if (lightingColor.checked && !baseColor.checked) {
+    const layers = ([...layerOptions.childNodes] as HTMLDivElement[]).map(div => (div.firstChild as HTMLInputElement).checked);
+    worldMap.render(layers);
+
+    if (layers[layers.length - 1] || layers[0] && !layers.slice(1, layers.length - 1).some(val => val)) {
         canvas.classList.add("terraria-map-lighting");
     } else {
         canvas.classList.remove("terraria-map-lighting");
@@ -62,6 +77,14 @@ function getWorldInfo() {
         global.createElementEX("span", {}, [
             global.createElementEX("b", {}, ["Dimensions: "]),
             `${worldMap.width}x${worldMap.height}`,
+        ]),
+        global.createElementEX("span", {}, [
+            global.createElementEX("b", {}, ["Underground depth: "]),
+            `${worldMap.worldSurfaceEstimated ? "~" : ""}${worldMap.worldSurface}`,
+        ]),
+        global.createElementEX("span", {}, [
+            global.createElementEX("b", {}, ["Caverns depth: "]),
+            `~${worldMap.cavernLayer}`,
         ]),
     ]
     worldInfo.replaceChildren(...contents);

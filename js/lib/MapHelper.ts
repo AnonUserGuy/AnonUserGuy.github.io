@@ -1,9 +1,6 @@
 import * as global from "@js/global.js";
 
 // TODO: LoadMapVersion1
-// TODO: actually use lighting data
-// TODO: display file metadata and world info
-// TODO: sliders for world surface and rock depth
 
 export class BinaryReader {
     data: Uint8Array;
@@ -91,7 +88,12 @@ class Color {
         return `rgb(${this.R} ${this.G} ${this.B})`;
     }
 
+    public copy() {
+        return new Color(this.R, this.G, this.B, this.A);
+    }
+
     static get Black() { return new Color(0, 0, 0) };
+    static get White() { return new Color(255, 255, 255) };
     static get Transparent() { return new Color(0, 0, 0, 0) };
 
     static globalBlack = Color.Black;
@@ -1577,8 +1579,157 @@ export class MapHelper {
         MapHelper.snowTypes[5] = MapHelper.tileLookup[200];
     }
 
+    public static paintColor(color: number) {
+        const white = Color.White;
+        if (color == 1 || color == 13) {
+            white.R = 255;
+            white.G = 0;
+            white.B = 0;
+        }
+        if (color == 2 || color == 14) {
+            white.R = 255;
+            white.G = 127;
+            white.B = 0;
+        }
+        if (color == 3 || color == 15) {
+            white.R = 255;
+            white.G = 255;
+            white.B = 0;
+        }
+        if (color == 4 || color == 16) {
+            white.R = 127;
+            white.G = 255;
+            white.B = 0;
+        }
+        if (color == 5 || color == 17) {
+            white.R = 0;
+            white.G = 255;
+            white.B = 0;
+        }
+        if (color == 6 || color == 18) {
+            white.R = 0;
+            white.G = 255;
+            white.B = 127;
+        }
+        if (color == 7 || color == 19) {
+            white.R = 0;
+            white.G = 255;
+            white.B = 255;
+        }
+        if (color == 8 || color == 20) {
+            white.R = 0;
+            white.G = 127;
+            white.B = 255;
+        }
+        if (color == 9 || color == 21) {
+            white.R = 0;
+            white.G = 0;
+            white.B = 255;
+        }
+        if (color == 10 || color == 22) {
+            white.R = 127;
+            white.G = 0;
+            white.B = 255;
+        }
+        if (color == 11 || color == 23) {
+            white.R = 255;
+            white.G = 0;
+            white.B = 255;
+        }
+        if (color == 12 || color == 24) {
+            white.R = 255;
+            white.G = 0;
+            white.B = 127;
+        }
+        if (color == 25) {
+            white.R = 75;
+            white.G = 75;
+            white.B = 75;
+        }
+        if (color == 26) {
+            white.R = 255;
+            white.G = 255;
+            white.B = 255;
+        }
+        if (color == 27) {
+            white.R = 175;
+            white.G = 175;
+            white.B = 175;
+        }
+        if (color == 28) {
+            white.R = 255;
+            white.G = 178;
+            white.B = 125;
+        }
+        if (color == 29) {
+            white.R = 25;
+            white.G = 25;
+            white.B = 25;
+        }
+        if (color == 30) {
+            white.R = 200;
+            white.G = 200;
+            white.B = 200;
+            white.A = 150;
+        }
+        return white;
+    }
+
+    public static MapColor(type: number, oldColor: Color, colorType: number) {
+        const color = MapHelper.paintColor(colorType);
+        let max = oldColor.R / 255;
+        let mid = oldColor.G / 255;
+        let min = oldColor.B / 255;
+        if (mid > max) {
+            let swap = max;
+            max = mid;
+            mid = swap;
+        }
+        if (min > max) {
+            let swap = max;
+            max = min;
+            min = swap;
+        }
+        switch (colorType) {
+            case 29:
+                const num7 = min * 0.3;
+                oldColor.R = color.R * num7;
+                oldColor.G = color.G * num7;
+                oldColor.B = color.B * num7;
+                break;
+            case 30:
+                if (type >= MapHelper.wallRangeStart && type <= MapHelper.wallRangeEnd) {
+                    oldColor.R = (255 - oldColor.R) * 0.5;
+                    oldColor.G = (255 - oldColor.G) * 0.5;
+                    oldColor.B = (255 - oldColor.B) * 0.5;
+                }
+                else {
+                    oldColor.R = 255 - oldColor.R;
+                    oldColor.G = 255 - oldColor.G;
+                    oldColor.B = 255 - oldColor.B;
+                }
+                break;
+            default:
+                const num6 = max;
+                oldColor.R = color.R * num6;
+                oldColor.G = color.G * num6;
+                oldColor.B = color.B * num6;
+                break;
+        }
+    }
+
     public static GetMapTileXnaColor(tile: MapTile) {
         return MapHelper.colorLookup[tile.Type] || Color.globalBlack;
+    }
+
+    public static GetMapTileAirColor(y: number, worldSurface: number) {
+         if (y < worldSurface) {
+            let depth = Math.floor(256 * (y / worldSurface));
+            return MapHelper.colorLookup[depth + MapHelper.skyPosition];
+        }
+        else {
+            return MapHelper.colorLookup[MapHelper.hellPosition];
+        }
     }
 
     public static EstimateWorldSurface(worldHeight: number) {
@@ -1616,6 +1767,7 @@ export class MapHelper {
     }
 
     static async LoadMapVersion1(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
+        throw new TypeError(`Sorry, this file was made for an older version of terraria and isn't currently supported.`);
     }
 
     static async LoadMapVersion2(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
@@ -1625,15 +1777,15 @@ export class MapHelper {
         const worldHeight = fileIO.ReadInt32();
         const worldWidth = fileIO.ReadInt32();
 
-        const worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
+        let worldSurface: number | undefined;
         const rockLayer = MapHelper.EstimateRockLayer(worldHeight);
 
-        worldMap.width = worldWidth;
-        worldMap.height = worldHeight;
+        worldMap.setDimensions(worldWidth, worldHeight);
         worldMap.worldName = worldName;
         worldMap.worldId = worldId;
         worldMap.release = release;
-        worldMap.revision = metadata ? Number(metadata[2]) : 0;
+        worldMap.revision = metadata ? metadata[2] as number : 0;
+        worldMap.cavernLayer = rockLayer;
 
         const tileCount = fileIO.ReadInt16();
         const wallCount = fileIO.ReadInt16();
@@ -1746,7 +1898,7 @@ export class MapHelper {
             }
             ++mapTileValue;
         }
-        const UndergroundAirTile = mapTileIndex;
+        const hellOffset = mapTileIndex;
         mapTileTypes[mapTileIndex] = mapTileValue;
         const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(new Uint8Array(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw")));
         for (let y = 0; y < worldHeight; ++y) {
@@ -1820,16 +1972,21 @@ export class MapHelper {
                         tileTypeIndex += liquidOffset + whichLiquid;
                         break;
                     case 6: // air
-                        if (y < worldSurface) {
+                        tileTypeIndex = airOffset;
+                        break;
+                        /* if (y < worldSurface) {
                             let depth = Math.floor(airCount * (y / worldSurface));
                             tileTypeIndex += airOffset + depth;
                             break;
                         }
                         else {
-                            tileTypeIndex = UndergroundAirTile;
+                            tileTypeIndex = hellOffset;
                             break;
+                        } */
+                    case 7: // underground/cavern air
+                        if (!worldSurface) {
+                            worldSurface = y;
                         }
-                    case 7:
                         if (y < rockLayer) {
                             tileTypeIndex += dirtOffset;
                             break;
@@ -1840,7 +1997,7 @@ export class MapHelper {
                         }
                 }
 
-                let tile: MapTile = MapTile.Create(mapTileTypes[tileTypeIndex], light, tileColor >> 1 & 31);
+                let tile: MapTile = MapTile.Create(mapTileTypes[tileTypeIndex], light, tileColor >> 1 & 31, tileGroup);
                 worldMap.SetTile(x, y, tile);
                 if (light == 255) {
                     for (; repeated > 0; --repeated) {
@@ -1856,19 +2013,39 @@ export class MapHelper {
                 }
             }
         }
+
+        if (!worldSurface) {
+            worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
+            worldMap.worldSurfaceEstimated = true;
+        } else {
+            worldMap.worldSurfaceEstimated = false;
+        }
+        worldMap.worldSurface = worldSurface;
     }
 }
 
+enum TileGroup {
+    Empty,
+    Tile,
+    Wall,
+    Water,
+    Lava,
+    Honey,
+    Air,
+    DirtRock
+}
 
 class MapTile {
     public Type: number;
     public Light: number;
     private _extraData: number;
+    public Group: number;
 
-    constructor(type: number, light: number, extraData: number) {
+    constructor(type: number, light: number, extraData: number, group: number) {
         this.Type = type;
         this.Light = light;
         this._extraData = extraData;
+        this.Group = group;
     }
 
     public get Color() {
@@ -1879,21 +2056,40 @@ class MapTile {
     }
 
     public WithLight(light: number) {
-        return new MapTile(this.Type, light, this._extraData | 128);
+        return new MapTile(this.Type, light, this._extraData | 128, this.Group);
     }
 
-    public static Create(type: number, light: number, color: number) {
-        return new MapTile(type, light, color | 128);
+    public static Create(type: number, light: number, color: number, group: number) {
+        return new MapTile(type, light, color | 128, group);
     }
 }
 
 export class WorldMap {
 
-    public canvasBase: HTMLCanvasElement;
-    public canvasLighting: HTMLCanvasElement;
-    public canvasPainted: HTMLCanvasElement;
+    public layers: HTMLCanvasElement[];
+    public canvasLighting        : HTMLCanvasElement;
+    public canvasTilesPainted    : HTMLCanvasElement;
+    public canvasTiles           : HTMLCanvasElement;
+    public canvasWallsPainted    : HTMLCanvasElement;
+    public canvasWalls           : HTMLCanvasElement;
+    public canvasLiquids         : HTMLCanvasElement;
+    public canvasAir             : HTMLCanvasElement;
+    public canvasUnexplored      : HTMLCanvasElement;
+    
+    public static layerNames = [
+        "Lighting",
+        "Tiles Painted",
+        "Tiles",
+        "Walls Painted",
+        "Walls",
+        "Liquids",
+        "Air",
+        "Unexplored/Explored"        
+    ]
+
     private _width: number;
     private _height: number;
+    private tiles: MapTile[];
 
     public canvasOutput: HTMLCanvasElement;
 
@@ -1901,14 +2097,25 @@ export class WorldMap {
     public worldId?: number;
     public release?: number;
     public revision?: number;
+    public worldSurface?: number;
+    public worldSurfaceEstimated?: boolean;
+    public cavernLayer?: number;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvasOutput = canvas;
         const d = { "width": String(canvas.width), "height": String(canvas.height) };
 
-        this.canvasBase = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.canvasLighting = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.canvasPainted = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers = [];
+        this.layers[0] = this.canvasLighting        = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[1] = this.canvasTilesPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[2] = this.canvasTiles           = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[3] = this.canvasWallsPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[4] = this.canvasWalls           = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[5] = this.canvasLiquids         = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[6] = this.canvasAir             = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.layers[7] = this.canvasUnexplored      = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        
+        this.tiles = [];
 
         this._width = canvas.width;
         this._height = canvas.height;
@@ -1930,30 +2137,31 @@ export class WorldMap {
         this.updateCanvasDimensions();
     }
 
+    public setDimensions(w: number, h: number) {
+        this._width = w;
+        this._height = h;
+        this.updateCanvasDimensions();
+    }
+
     public updateCanvasDimensions() {
-        this.canvasBase.width = this._width;
-        this.canvasBase.height = this._height;
-        this.canvasLighting.width = this._width;
-        this.canvasLighting.height = this._height;
-        this.canvasPainted.width = this._width;
-        this.canvasPainted.height = this._height;
+        this.tiles = [];
+        this.tiles.length = this._width * this._height;
+        this.layers.forEach(canvas => {
+            canvas.width = this._width;
+            canvas.height = this._height;
+        })
         this.canvasOutput.width = this._width;
         this.canvasOutput.height = this._height;
     }
 
-    public render(useBase: boolean, usePainted: boolean, useLighting: boolean) {
+    public render(layersActive: boolean[]) {
         const ctxOutput = this.canvasOutput.getContext("2d")!;
         ctxOutput.clearRect(0, 0, this._width, this._height);
 
-        if (useBase) {
-            if (usePainted) {
-                this.drawCanvas(ctxOutput, this.canvasPainted);
-            } else {
-                this.drawCanvas(ctxOutput, this.canvasBase);
+        for (let i = this.layers.length - 1; i >= 0; i--) {
+            if (layersActive[i]) {
+                this.drawCanvas(ctxOutput, this.layers[i]);  
             }
-        }
-        if (useLighting) {
-            this.drawCanvas(ctxOutput, this.canvasLighting);
         }
     }
 
@@ -1961,20 +2169,73 @@ export class WorldMap {
         try {
             ctx.drawImage(canvas, 0, 0);
         } catch (e: any) {
-            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty" ) {
+            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty") {
                 throw e;
             }
         }
     }
 
     public SetTile(x: number, y: number, tile: MapTile) {
-        const ctxBase = this.canvasBase.getContext("2d")!;
-        const ctxLighting = this.canvasLighting.getContext("2d")!;
+        this.tiles[y * this._width + x] = tile;
+    }
 
-        ctxBase.fillStyle = MapHelper.GetMapTileXnaColor(tile).toString();
-        ctxBase.fillRect(x, y, 1, 1);
+    public renderLayers() {
+        for (let i = 0; i < this.tiles.length; i++) {
+            this.renderTile(i % this._width, Math.floor(i / this._width), this.tiles[i]);
+        }
+    }
 
-        ctxLighting.fillStyle = `rgb(0 0 0 / ${1 - tile.Light / 255})`;
-        ctxLighting.fillRect(x, y, 1, 1);
+    public renderTile(x: number, y: number, tile: MapTile | undefined) {
+        if (tile && tile.Group !== TileGroup.Empty) {
+            let ctx: CanvasRenderingContext2D;
+            let ctx2: CanvasRenderingContext2D | undefined;
+            let color: Color;
+            switch (tile.Group) {
+                case TileGroup.Air:
+                    color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
+                    ctx = this.canvasAir.getContext("2d")!;
+                    break;
+                case TileGroup.DirtRock:
+                    color = MapHelper.GetMapTileXnaColor(tile);
+                    ctx = this.canvasAir.getContext("2d")!;
+                    break;
+                case TileGroup.Tile:
+                    color = MapHelper.GetMapTileXnaColor(tile);
+                    ctx = this.canvasTiles.getContext("2d")!;
+                    ctx2 = this.canvasTilesPainted.getContext("2d")!;
+                    break;
+                case TileGroup.Wall:
+                    color = MapHelper.GetMapTileXnaColor(tile);
+                    ctx = this.canvasWalls.getContext("2d")!;
+                    ctx2 = this.canvasWallsPainted.getContext("2d")!;
+                    break;
+                case TileGroup.Water:
+                case TileGroup.Lava:
+                case TileGroup.Honey:
+                default:
+                    color = MapHelper.GetMapTileXnaColor(tile);
+                    ctx = this.canvasLiquids.getContext("2d")!;
+                    break;
+            }
+            
+            ctx.fillStyle = color.toString();
+            ctx.fillRect(x, y, 1, 1);
+
+            if (ctx2 && tile.Color > 0) {
+                const colorPainted = color.copy();
+                MapHelper.MapColor(tile.Type, colorPainted, tile.Color);
+                ctx2!.fillStyle = colorPainted.toString();
+                ctx2!.fillRect(x, y, 1, 1);
+            }
+
+            const ctx3 = this.canvasLighting.getContext("2d")!;
+            ctx3.fillStyle = `rgb(0 0 0 / ${1 - tile.Light / 255})`;
+            ctx3.fillRect(x, y, 1, 1);
+        } else {
+            const ctx = this.canvasUnexplored.getContext("2d")!;
+            ctx.fillStyle = "rgb(0 0 0)";
+            ctx.fillRect(x, y, 1, 1);
+        }
+
     }
 }
