@@ -1,6 +1,5 @@
 import * as global from "@js/global.js";
 
-// TODO: Seperate classes into appropriate files that match how terraria distributes them
 // TODO: LoadMapVersion1
 // TODO: actually use lighting data
 // TODO: display file metadata and world info
@@ -1589,13 +1588,13 @@ export class MapHelper {
         return Math.round(0.35 * worldHeight + 25);
     }
 
-    public static async Load(fileIO: BinaryReader) {
+    public static async Load(fileIO: BinaryReader, worldMap: WorldMap) {
         const release = fileIO.ReadInt32();
         if (release <= 279) {
             if (release <= 91) {
-                return MapHelper.LoadMapVersion1(fileIO, release);
+                return MapHelper.LoadMapVersion1(fileIO, release, worldMap);
             } else {
-                return MapHelper.LoadMapVersion2(fileIO, release);
+                return MapHelper.LoadMapVersion2(fileIO, release, worldMap);
             }
         }
         throw new TypeError(`Bad file: release ${release} above 279, likely not terraria file`);
@@ -1616,10 +1615,10 @@ export class MapHelper {
         return [relogicHeader, fileType, revision, isFavorite];
     }
 
-    static async LoadMapVersion1(fileIO: BinaryReader, release: number) {
+    static async LoadMapVersion1(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
     }
 
-    static async LoadMapVersion2(fileIO: BinaryReader, release: number) {
+    static async LoadMapVersion2(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
         const metadata = release > 135 ? MapHelper.ReadFileMetadata(fileIO) : null;
         const worldName = fileIO.ReadString();
         const worldId = fileIO.ReadInt32();
@@ -1629,8 +1628,12 @@ export class MapHelper {
         const worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
         const rockLayer = MapHelper.EstimateRockLayer(worldHeight);
 
-        worldMap.canvasElement!.width = worldWidth;
-        worldMap.canvasElement!.height = worldHeight;
+        worldMap.width = worldWidth;
+        worldMap.height = worldHeight;
+        worldMap.worldName = worldName;
+        worldMap.worldId = worldId;
+        worldMap.release = release;
+        worldMap.revision = metadata ? Number(metadata[2]) : 0;
 
         const tileCount = fileIO.ReadInt16();
         const wallCount = fileIO.ReadInt16();
@@ -1884,27 +1887,94 @@ class MapTile {
     }
 }
 
-class WorldMap {
-    private _canvasElement?: HTMLCanvasElement;
-    private _ctx?: CanvasRenderingContext2D;
+export class WorldMap {
 
-    public set canvasElement(el: HTMLCanvasElement) {
-        this._canvasElement = el;
-        this._ctx = this._canvasElement!.getContext("2d")!;
+    public canvasBase: HTMLCanvasElement;
+    public canvasLighting: HTMLCanvasElement;
+    public canvasPainted: HTMLCanvasElement;
+    private _width: number;
+    private _height: number;
+
+    public canvasOutput: HTMLCanvasElement;
+
+    public worldName?: string;
+    public worldId?: number;
+    public release?: number;
+    public revision?: number;
+
+    constructor(canvas: HTMLCanvasElement) {
+        this.canvasOutput = canvas;
+        const d = { "width": String(canvas.width), "height": String(canvas.height) };
+
+        this.canvasBase = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.canvasLighting = global.createElementEX("canvas", d) as HTMLCanvasElement;
+        this.canvasPainted = global.createElementEX("canvas", d) as HTMLCanvasElement;
+
+        this._width = canvas.width;
+        this._height = canvas.height;
     }
-    public get canvasElement(): (HTMLCanvasElement | undefined) {
-        return this._canvasElement;
+
+    public get width() {
+        return this._width;
+    }
+    public set width(val: number) {
+        this._width = val;
+        this.updateCanvasDimensions();
     }
 
-    constructor() {
+    public get height() {
+        return this._height;
+    }
+    public set height(val: number) {
+        this._height = val;
+        this.updateCanvasDimensions();
+    }
 
+    public updateCanvasDimensions() {
+        this.canvasBase.width = this._width;
+        this.canvasBase.height = this._height;
+        this.canvasLighting.width = this._width;
+        this.canvasLighting.height = this._height;
+        this.canvasPainted.width = this._width;
+        this.canvasPainted.height = this._height;
+        this.canvasOutput.width = this._width;
+        this.canvasOutput.height = this._height;
+    }
+
+    public render(useBase: boolean, usePainted: boolean, useLighting: boolean) {
+        const ctxOutput = this.canvasOutput.getContext("2d")!;
+        ctxOutput.clearRect(0, 0, this._width, this._height);
+
+        if (useBase) {
+            if (usePainted) {
+                this.drawCanvas(ctxOutput, this.canvasPainted);
+            } else {
+                this.drawCanvas(ctxOutput, this.canvasBase);
+            }
+        }
+        if (useLighting) {
+            this.drawCanvas(ctxOutput, this.canvasLighting);
+        }
+    }
+
+    private drawCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+        try {
+            ctx.drawImage(canvas, 0, 0);
+        } catch (e: any) {
+            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty" ) {
+                throw e;
+            }
+        }
     }
 
     public SetTile(x: number, y: number, tile: MapTile) {
-        if (!this._ctx) return;
-        this._ctx.fillStyle = MapHelper.GetMapTileXnaColor(tile).toString();
-        this._ctx.fillRect(x, y, 1, 1);
+        const ctxBase = this.canvasBase.getContext("2d")!;
+        const ctxLighting = this.canvasLighting.getContext("2d")!;
+
+        ctxBase.fillStyle = MapHelper.GetMapTileXnaColor(tile).toString();
+        ctxBase.fillRect(x, y, 1, 1);
+
+        ctxLighting.fillStyle = `rgb(0 0 0 / ${1 - tile.Light / 255})`;
+        ctxLighting.fillRect(x, y, 1, 1);
     }
 }
-
-export const worldMap = new WorldMap();

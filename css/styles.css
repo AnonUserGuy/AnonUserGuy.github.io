@@ -142,3 +142,13 @@ abbr {
     background-color: black;
     margin: 10px;
 }
+
+.terraria-map-lighting {
+    background-color: grey;
+}
+
+.horz-follow {
+    position: sticky;
+    left: 8px;
+    width: calc(100vw - 16px);
+}

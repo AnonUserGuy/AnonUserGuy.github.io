@@ -16,31 +16,61 @@
 
     <title>Terraria .Map File Viewer</title>
     <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            min-width: fit-content;
+        }
+    </style>
+
     <script type="module" src="/js/global.js"></script>
     <script type="module" src="./index.js"></script>
 </head>
 
 <body>
-    <div>
-        <a href="/">&lt-- go back</a>
+    <div class="horz-follow">
+        <div>
+            <a href="/">&lt-- go back</a>
+        </div>
+
+        <div class="section">
+            <p>
+                Under "Documents/My Games/Terraria/Players", select a folder for a character. Then, upload any of the
+                .map files contained to view a minimap for a world that character played on!
+            </p>
+            <p>
+                <i>
+                    (Note: if you don't know which file you're looking for, file size is a good indication for which
+                    worlds you played the most on.)
+                </i>
+            </p>
+            <p>
+                <input id="uploadInput" type="file" accept=".map" />
+            </p>
+        </div>
+
+        <div class="section" id="worldInfo" hidden></div>
+
+        <div class="section">
+            <div class="selector">
+                <p>
+                    <input type="checkbox" id="baseColor" checked="true">
+                    <label for="baseColor">Base Color</label>
+                </p>
+                <p>
+                    <input type="checkbox" id="paintedColor" disabled>
+                    <label for="paintedColor">Painted</label>
+                </p>
+                <p>
+                    <input type="checkbox" id="lightingColor" checked="true">
+                    <label for="lightingColor">With Lighting</label>
+                </p>
+            </div>
+        </div>
     </div>
 
-    <div class="section">
-        <p>
-            Under "Documents/My Games/Terraria/Players", select a folder for a character. Then, upload any of the .map
-            files contained to view a minimap for a world that character played on!
-        </p>
-        <p>
-            <i>
-                (Note: if you don't know which file you're looking for, file size is a good indication for which worlds
-                you played the most on.)
-            </i>
-        </p>
-        <p>
-            <input id="uploadInput" type="file" accept=".map" />
-        </p>
-    </div>
-    <canvas class="terraria-map" width="0" height="0" id="canvas"></canvas> 
+    <canvas class="terraria-map" width="0" height="0" id="canvas">
+        Your browser doesn't support the canvas element. Perhaps consider upgrading?
+    </canvas>
 </body>
 
 </html>
