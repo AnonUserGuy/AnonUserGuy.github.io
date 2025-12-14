@@ -5,7 +5,9 @@ const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const download = document.getElementById("download") as HTMLButtonElement;
 const worldInfo = document.getElementById("worldInfo") as HTMLDivElement;
+
 const error = document.getElementById("error") as HTMLParagraphElement;
+const info = document.getElementById("info") as HTMLParagraphElement;
 
 const layerOptions = document.getElementById("layerOptions") as HTMLDivElement;
 const layerCheckboxes: HTMLInputElement[] = [];
@@ -43,7 +45,7 @@ download.addEventListener("click", (event) => {
         }
     }
     const name = toName.join("-");
-    
+
     canvas.toBlob((blob) => {
         if (blob) {
             global.download(blob, name);
@@ -55,6 +57,8 @@ uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
         global.loading(true);
         error.hidden = true;
+        info.hidden = true;
+        worldMap.release = -1;
         try {
             const buffer = await global.promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
             const fileReader = new BinaryReader(new Uint8Array(buffer));
@@ -65,6 +69,10 @@ uploadInput.addEventListener("change", async (event) => {
             console.error(e);
             error.textContent = e!.toString();
             error.hidden = false;
+        }
+        if (worldMap.release! > MapHelper.lastestRelease) {
+            info.textContent = `Warning: release ${worldMap.release} newer than latest supported release (${MapHelper.lastestRelease}), might cause issues`
+            info.hidden = false;
         }
         global.loading(false);
     }
@@ -105,7 +113,7 @@ function getWorldInfo() {
         ]),
         global.createElementEX("span", {}, [
             global.createElementEX("b", {}, ["Caverns depth: "]),
-            `~${worldMap.cavernLayer}`,
+            `~${worldMap.rockLayer}`,
         ]),
     ]
     worldInfo.replaceChildren(...contents);
