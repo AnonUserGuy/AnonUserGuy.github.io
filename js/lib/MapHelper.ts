@@ -46,7 +46,7 @@ export class BinaryReader {
     }
 
     ReadByte(): number {
-        return this.ReadBytes(1, false);
+        return this.data[this.pos++];
     }
 
     ReadInt16(): number {
@@ -1723,7 +1723,7 @@ export class MapHelper {
     }
 
     public static GetMapTileAirColor(y: number, worldSurface: number) {
-         if (y < worldSurface) {
+        if (y < worldSurface) {
             let depth = Math.floor(256 * (y / worldSurface));
             return MapHelper.colorLookup[depth + MapHelper.skyPosition];
         }
@@ -1761,8 +1761,8 @@ export class MapHelper {
             throw new TypeError(`Bad file: is terraria file, but not .map file`);
         }
         const revision = Number(fileIO.ReadUInt32());
-        const num2 = fileIO.ReadUInt64();
-        const isFavorite = !!(num2 & 1n);
+        const someBitfield = fileIO.ReadUInt64();
+        const isFavorite = !!(someBitfield & 1n);
         return [relogicHeader, fileType, revision, isFavorite];
     }
 
@@ -1777,7 +1777,6 @@ export class MapHelper {
         const worldHeight = fileIO.ReadInt32();
         const worldWidth = fileIO.ReadInt32();
 
-        let worldSurface: number | undefined;
         const rockLayer = MapHelper.EstimateRockLayer(worldHeight);
 
         worldMap.setDimensions(worldWidth, worldHeight);
@@ -1786,6 +1785,7 @@ export class MapHelper {
         worldMap.release = release;
         worldMap.revision = metadata ? metadata[2] as number : 0;
         worldMap.cavernLayer = rockLayer;
+        worldMap.worldSurface = -1;
 
         const tileCount = fileIO.ReadInt16();
         const wallCount = fileIO.ReadInt16();
@@ -1898,7 +1898,7 @@ export class MapHelper {
             }
             ++mapTileValue;
         }
-        const hellOffset = mapTileIndex;
+        //const hellOffset = mapTileIndex;
         mapTileTypes[mapTileIndex] = mapTileValue;
         const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(new Uint8Array(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw")));
         for (let y = 0; y < worldHeight; ++y) {
@@ -1973,7 +1973,6 @@ export class MapHelper {
                         break;
                     case 6: // air
                         tileTypeIndex = airOffset;
-                        break;
                         /* if (y < worldSurface) {
                             let depth = Math.floor(airCount * (y / worldSurface));
                             tileTypeIndex += airOffset + depth;
@@ -1983,9 +1982,11 @@ export class MapHelper {
                             tileTypeIndex = hellOffset;
                             break;
                         } */
+                        break;
                     case 7: // underground/cavern air
-                        if (!worldSurface) {
-                            worldSurface = y;
+                        if (worldMap.worldSurface === -1) {
+                            worldMap.worldSurface = y;
+                            worldMap.drawAirTiles();
                         }
                         if (y < rockLayer) {
                             tileTypeIndex += dirtOffset;
@@ -1998,29 +1999,32 @@ export class MapHelper {
                 }
 
                 let tile: MapTile = MapTile.Create(mapTileTypes[tileTypeIndex], light, tileColor >> 1 & 31, tileGroup);
-                worldMap.SetTile(x, y, tile);
+                worldMap.SetTile(x, y, repeated + 1, tile);
+                
                 if (light == 255) {
-                    for (; repeated > 0; --repeated) {
-                        ++x;
-                        worldMap.SetTile(x, y, tile);
-                    }
+                    worldMap.SetTileLight(x, y, repeated + 1, light);
+                    x += repeated;
                     continue;
+                } else {
+                    worldMap.SetTileLight(x, y, 1, light);
                 }
                 for (; repeated > 0; --repeated) {
                     ++x;
-                    tile = tile.WithLight(deflatedFileIO.ReadByte());
-                    worldMap.SetTile(x, y, tile);
+                    let light2 = deflatedFileIO.ReadByte();
+                    worldMap.SetTileLight(x, y, 1, light2);
                 }
             }
         }
 
-        if (!worldSurface) {
-            worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
+        if (worldMap.worldSurface === -1) {
+            worldMap.worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
             worldMap.worldSurfaceEstimated = true;
+            worldMap.drawAirTiles();
         } else {
             worldMap.worldSurfaceEstimated = false;
         }
-        worldMap.worldSurface = worldSurface;
+
+        worldMap.DrawUnexploredLayer();
     }
 }
 
@@ -2084,12 +2088,13 @@ export class WorldMap {
         "Walls",
         "Liquids",
         "Air",
-        "Unexplored/Explored"        
+        "Unexplored/Explored"
     ]
 
     private _width: number;
     private _height: number;
-    private tiles: MapTile[];
+    private airTiles: number[];
+    private airTileWidths: number[];
 
     public canvasOutput: HTMLCanvasElement;
 
@@ -2114,11 +2119,11 @@ export class WorldMap {
         this.layers[5] = this.canvasLiquids         = global.createElementEX("canvas", d) as HTMLCanvasElement;
         this.layers[6] = this.canvasAir             = global.createElementEX("canvas", d) as HTMLCanvasElement;
         this.layers[7] = this.canvasUnexplored      = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        
-        this.tiles = [];
 
         this._width = canvas.width;
         this._height = canvas.height;
+        this.airTiles = [];
+        this.airTileWidths = [];
     }
 
     public get width() {
@@ -2144,8 +2149,6 @@ export class WorldMap {
     }
 
     public updateCanvasDimensions() {
-        this.tiles = [];
-        this.tiles.length = this._width * this._height;
         this.layers.forEach(canvas => {
             canvas.width = this._width;
             canvas.height = this._height;
@@ -2160,7 +2163,7 @@ export class WorldMap {
 
         for (let i = this.layers.length - 1; i >= 0; i--) {
             if (layersActive[i]) {
-                this.drawCanvas(ctxOutput, this.layers[i]);  
+                this.drawCanvas(ctxOutput, this.layers[i]);
             }
         }
     }
@@ -2175,67 +2178,99 @@ export class WorldMap {
         }
     }
 
-    public SetTile(x: number, y: number, tile: MapTile) {
-        this.tiles[y * this._width + x] = tile;
-    }
-
-    public renderLayers() {
-        for (let i = 0; i < this.tiles.length; i++) {
-            this.renderTile(i % this._width, Math.floor(i / this._width), this.tiles[i]);
+    public drawAirTiles() {
+        const ctx = this.canvasAir.getContext("2d")!;
+        let y = -1;
+        let color: Color;
+        for (let i = 0; i < this.airTiles.length; i++) {
+            let n = this.airTiles[i];
+            let w = this.airTileWidths[i];
+            let y2 = Math.floor(n / this._width);
+            if (y !== y2) {
+                y = y2;
+                color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
+                ctx.fillStyle = color.toString();
+            }
+            ctx.fillRect(n % this._width, y, w, 1);
         }
+        this.airTiles = [];
+        this.airTileWidths = [];
     }
 
-    public renderTile(x: number, y: number, tile: MapTile | undefined) {
-        if (tile && tile.Group !== TileGroup.Empty) {
-            let ctx: CanvasRenderingContext2D;
-            let ctx2: CanvasRenderingContext2D | undefined;
-            let color: Color;
-            switch (tile.Group) {
-                case TileGroup.Air:
+    public SetTile(x: number, y: number, width: number, tile: MapTile) {
+        let ctx: CanvasRenderingContext2D;
+        let ctx2: CanvasRenderingContext2D;
+        let color: Color;
+        switch (tile.Group) {
+            case TileGroup.Air:
+                if (this.worldSurface === -1) {
+                    this.airTiles.push(y * this._width + x);
+                    this.airTileWidths.push(width);
+                } else {
                     color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
                     ctx = this.canvasAir.getContext("2d")!;
-                    break;
-                case TileGroup.DirtRock:
-                    color = MapHelper.GetMapTileXnaColor(tile);
-                    ctx = this.canvasAir.getContext("2d")!;
-                    break;
-                case TileGroup.Tile:
-                    color = MapHelper.GetMapTileXnaColor(tile);
-                    ctx = this.canvasTiles.getContext("2d")!;
-                    ctx2 = this.canvasTilesPainted.getContext("2d")!;
-                    break;
-                case TileGroup.Wall:
-                    color = MapHelper.GetMapTileXnaColor(tile);
-                    ctx = this.canvasWalls.getContext("2d")!;
-                    ctx2 = this.canvasWallsPainted.getContext("2d")!;
-                    break;
-                case TileGroup.Water:
-                case TileGroup.Lava:
-                case TileGroup.Honey:
-                default:
-                    color = MapHelper.GetMapTileXnaColor(tile);
-                    ctx = this.canvasLiquids.getContext("2d")!;
-                    break;
-            }
-            
-            ctx.fillStyle = color.toString();
-            ctx.fillRect(x, y, 1, 1);
+                    this.drawTile(x, y, width, ctx, color);
+                }
+                break;
+            case TileGroup.DirtRock:
+                color = MapHelper.GetMapTileXnaColor(tile);
+                ctx = this.canvasAir.getContext("2d")!;
+                this.drawTile(x, y, width, ctx, color);
+                break;
+            case TileGroup.Tile:
+                color = MapHelper.GetMapTileXnaColor(tile);
+                ctx = this.canvasTiles.getContext("2d")!;
+                ctx2 = this.canvasTilesPainted.getContext("2d")!;
+                this.drawTile(x, y, width, ctx, color);
+                this.drawPaintedTile(x, y, width, ctx2, color, tile);
+                break;
+            case TileGroup.Wall:
+                color = MapHelper.GetMapTileXnaColor(tile);
+                ctx = this.canvasWalls.getContext("2d")!;
+                ctx2 = this.canvasWallsPainted.getContext("2d")!;
+                this.drawTile(x, y, width, ctx, color);
+                this.drawPaintedTile(x, y, width, ctx2, color, tile);
+                break;
+            case TileGroup.Water:
+            case TileGroup.Lava:
+            case TileGroup.Honey:
+                color = MapHelper.GetMapTileXnaColor(tile);
+                ctx = this.canvasLiquids.getContext("2d")!;
+                this.drawTile(x, y, width, ctx, color);
+                break;
+        }
+    }
 
-            if (ctx2 && tile.Color > 0) {
-                const colorPainted = color.copy();
-                MapHelper.MapColor(tile.Type, colorPainted, tile.Color);
-                ctx2!.fillStyle = colorPainted.toString();
-                ctx2!.fillRect(x, y, 1, 1);
-            }
+    private drawTile(x: number, y: number, width: number, ctx: CanvasRenderingContext2D, color: Color) {
+        ctx.fillStyle = color.toString();
+        ctx.fillRect(x, y, width, 1);
+    }
 
-            const ctx3 = this.canvasLighting.getContext("2d")!;
-            ctx3.fillStyle = `rgb(0 0 0 / ${1 - tile.Light / 255})`;
-            ctx3.fillRect(x, y, 1, 1);
-        } else {
-            const ctx = this.canvasUnexplored.getContext("2d")!;
-            ctx.fillStyle = "rgb(0 0 0)";
-            ctx.fillRect(x, y, 1, 1);
+    private drawPaintedTile(x: number, y: number, width: number, ctx2: CanvasRenderingContext2D, color: Color, tile: MapTile) {
+        if (tile.Color > 0) {
+            const colorPainted = color.copy();
+            MapHelper.MapColor(tile.Type, colorPainted, tile.Color);
+            ctx2!.fillStyle = colorPainted.toString();
+            ctx2!.fillRect(x, y, width, 1);
+        }
+    }
+
+    public SetTileLight(x: number, y: number, width: number, light: number) {
+        const ctx3 = this.canvasLighting.getContext("2d")!;
+        ctx3.globalAlpha = 1 - light / 255;
+        ctx3.fillRect(x, y, width, 1);
+    }
+
+    public DrawUnexploredLayer() {
+        const ctx = this.canvasUnexplored.getContext("2d")!;
+        ctx.fillStyle = "rgb(0 0 0)";
+        ctx.fillRect(0, 0, this._width, this._height);
+        ctx.globalCompositeOperation = "destination-out";
+
+        for (let i = this.layers.length - 2; i >= 1; i--) {
+            this.drawCanvas(ctx, this.layers[i]);
         }
 
+        ctx.globalCompositeOperation = "source-over";
     }
 }

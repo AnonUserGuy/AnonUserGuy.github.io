@@ -141,6 +141,7 @@ abbr {
 .terraria-map {
     background-color: black;
     margin: 10px;
+    image-rendering: pixelated;
 }
 
 .terraria-map-lighting {
@@ -151,4 +152,9 @@ abbr {
     position: sticky;
     left: 8px;
     width: calc(100vw - 16px);
+}
+
+.error {
+    background-color: salmon;
+    margin: 16px;
 }

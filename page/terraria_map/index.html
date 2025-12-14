@@ -46,16 +46,19 @@
             <p>
                 <input id="uploadInput" type="file" accept=".map" />
             </p>
+            <p class="error" id="error" hidden></p>
         </div>
 
         <div class="section" id="worldInfo" hidden></div>
 
-        <div class="section text-entries" id="layerOptions"></div>
+        <div class="section text-entries" id="layerOptions">
+            <div>
+                <button id="download">Download!</button>
+            </div>
+        </div>
     </div>
 
-    <canvas class="terraria-map" width="0" height="0" id="canvas">
-        Your browser doesn't support the canvas element. Perhaps consider upgrading?
-    </canvas>
+    <canvas class="terraria-map" width="0px" height="0px" id="canvas">
 </body>
 
 </html>

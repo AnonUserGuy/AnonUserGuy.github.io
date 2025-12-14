@@ -38,6 +38,19 @@ export async function decompressBuffer(bytes: BufferSource, type: CompressionFor
   return buffer;
 }
 
+export function download(file: Blob | File, filename?: string, type?: string) {
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(file);
+    a.href = url;
+    if (filename) a.download = filename;
+    if (type) a.type = type;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+}
+
 export function createElementEX(tagName: string, attributes: Attributes = {}, children: (HTMLElement | string)[] = []) {
     const element = document.createElement(tagName);
     for (const attribute in attributes) {
