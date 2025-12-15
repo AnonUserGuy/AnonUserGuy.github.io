@@ -51,7 +51,7 @@ export class BinaryReader {
         }
         this.pos += n;
         if (signed) {
-            value = (value << (32 - n * 8)) >> (n * 8);
+            value = (value << (4 - n) * 8) >> (4 - n) * 8;
         }
         return value;
     }
@@ -100,6 +100,25 @@ export class BinaryReader {
 
     ReadUInt64(): bigint {
         return this.ReadBigBytes(8);
+    }
+
+    ReadBitArray(length?: number): boolean[] {
+        if (!length) {
+            length = this.ReadInt16();
+        }
+        const arr: boolean[] = Array(length);
+        let byte = 0;
+        let mask = 128;
+        for (let i = 0; i < length; ++i) {
+            if (mask == 128) {
+                byte = this.ReadByte();
+                mask = 1;
+            } else {
+                mask <<= 1;
+            }
+            if ((byte & mask) === mask) arr[i] = true;
+        }
+        return arr;
     }
 }
 
@@ -210,6 +229,8 @@ export class MapHelper {
 
     public static tileCount = 693;
     public static wallCount = 347;
+    public static liquidCount = 4;
+
 
     private static snowTypes: number[];
     private static colorLookup: Color[];
@@ -2026,41 +2047,19 @@ export class MapHelper {
         const airCount = fileIO.ReadInt16();
         const dirtCount = fileIO.ReadInt16();
         const rockCount = fileIO.ReadInt16();
-        const tileHasVariantCount: boolean[] = Array(tileCount);
-        let tileFlagByte = 0;
-        let tileFlagBitmask = 128;
-        for (let i = 0; i < tileCount; ++i) {
-            if (tileFlagBitmask == 128) {
-                tileFlagByte = fileIO.ReadByte();
-                tileFlagBitmask = 1;
-            } else {
-                tileFlagBitmask <<= 1;
-            }
-            if ((tileFlagByte & tileFlagBitmask) === tileFlagBitmask) tileHasVariantCount[i] = true;
-        }
-        const wallHasVariantCount: boolean[] = Array(wallCount);
-        let wallFlagByte = 0;
-        let wallFlagBitmask = 128;
-        for (let i = 0; i < wallCount; ++i) {
-            if (wallFlagBitmask == 128) {
-                wallFlagByte = fileIO.ReadByte();
-                wallFlagBitmask = 1;
-            } else {
-                wallFlagBitmask <<= 1;
-            }
-            if ((wallFlagByte & wallFlagBitmask) === wallFlagBitmask) wallHasVariantCount[i] = true;
-        }
-        const tileVariantCount = new Uint8Array(tileCount);
+        const tileSpritesImportant = fileIO.ReadBitArray(tileCount);
+        const wallSpritesImportant = fileIO.ReadBitArray(wallCount);
+        const tileSprites = new Uint8Array(tileCount);
         let tileTotal = 0;
         for (let i = 0; i < tileCount; ++i) {
-            tileVariantCount[i] = !tileHasVariantCount[i] ? 1 : fileIO.ReadByte();
-            tileTotal += tileVariantCount[i];
+            tileSprites[i] = !tileSpritesImportant[i] ? 1 : fileIO.ReadByte();
+            tileTotal += tileSprites[i];
         }
-        const wallVariantCount = new Uint8Array(wallCount);
+        const wallSprites = new Uint8Array(wallCount);
         let wallTotal = 0;
         for (let i = 0; i < wallCount; ++i) {
-            wallVariantCount[i] = !wallHasVariantCount[i] ? 1 : fileIO.ReadByte();
-            wallTotal += wallVariantCount[i];
+            wallSprites[i] = !wallSpritesImportant[i] ? 1 : fileIO.ReadByte();
+            wallTotal += wallSprites[i];
         }
         const mapTileTypes = new Uint16Array(tileTotal + wallTotal + liquidCount + airCount + dirtCount + rockCount + 2);
         mapTileTypes[0] = 0;
@@ -2069,7 +2068,7 @@ export class MapHelper {
         const tileOffset = mapTileIndex;
         for (let i = 0; i < MapHelper.tileCount; ++i) {
             if (i < tileCount) {
-                const tileVariants = tileVariantCount[i];
+                const tileVariants = tileSprites[i];
                 const tileOptionCount = MapHelper.tileOptionCounts[i];
                 for (let j = 0; j < tileOptionCount; ++j) {
                     if (j < tileVariants) {
@@ -2086,7 +2085,7 @@ export class MapHelper {
         const wallOffset = mapTileIndex;
         for (let i = 0; i < MapHelper.wallCount; ++i) {
             if (i < wallCount) {
-                const wallVariants = wallVariantCount[i];
+                const wallVariants = wallSprites[i];
                 const wallOptionCount = MapHelper.wallOptionCounts[i];
                 for (let j = 0; j < wallOptionCount; ++j) {
                     if (j < wallVariants) {
@@ -2100,7 +2099,7 @@ export class MapHelper {
                 mapTileValue += MapHelper.wallOptionCounts[i];
         }
         const liquidOffset = mapTileIndex;
-        for (let i = 0; i < 4; ++i) {
+        for (let i = 0; i < MapHelper.liquidCount; ++i) {
             if (i < liquidCount) {
                 mapTileTypes[mapTileIndex] = mapTileValue;
                 ++mapTileIndex;
@@ -2142,8 +2141,8 @@ export class MapHelper {
                 // Z - tile type index width
                 // W - has light level
                 // V - has repeated and repeated width
-                const tileColor = (tileFlags & 1) != 1 ? 0 : deflatedFileIO.ReadByte();
-                const tileGroup = (tileFlags & 14) >> 1;
+                const tileColor = (tileFlags & 0b0000_0001) != 1 ? 0 : deflatedFileIO.ReadByte();
+                const tileGroup = (tileFlags & 0b0000_1110) >> 1;
                 let hasTileTypeIndex: boolean;
                 switch (tileGroup) {
                     case TileGroup.Empty:
@@ -2166,10 +2165,10 @@ export class MapHelper {
                         hasTileTypeIndex = false;
                         break;
                 }
-                let tileTypeIndex = !hasTileTypeIndex ? 0 : ((tileFlags & 16) !== 16 ? deflatedFileIO.ReadByte() : deflatedFileIO.ReadUInt16());
-                const light = (tileFlags & 32) !== 32 ? 255 : deflatedFileIO.ReadByte();
+                let tileTypeIndex = !hasTileTypeIndex ? 0 : ((tileFlags & 0b0001_0000) !== 0b0001_0000 ? deflatedFileIO.ReadByte() : deflatedFileIO.ReadUInt16());
+                const light = (tileFlags & 0b0010_0000) !== 0b0010_0000 ? 255 : deflatedFileIO.ReadByte();
                 let repeated;
-                switch (((tileFlags & 192) >> 6)) {
+                switch (((tileFlags & 0b1100_0000) >> 6)) {
                     case 0:
                         repeated = 0;
                         break;

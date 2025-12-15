@@ -101,7 +101,11 @@ function getWorldInfo() {
         ]),
         global.createElementEX("span", {}, [
             global.createElementEX("b", {}, ["Version: "]),
-            `${worldMap.release}, r${worldMap.revision}`,
+            `${worldMap.release}`,
+        ]),
+        global.createElementEX("span", {}, [
+            global.createElementEX("b", {}, ["Times saved: "]),
+            `${worldMap.revision}`,
         ]),
         global.createElementEX("span", {}, [
             global.createElementEX("b", {}, ["Dimensions: "]),
