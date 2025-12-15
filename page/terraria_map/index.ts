@@ -1,9 +1,10 @@
 import * as global from "@js/global.js";
-import { BinaryReader, MapHelper, WorldMap } from "@js/lib/MapHelper.js";
+import { BinaryReader, BinaryWriter, MapHelper, WorldMap } from "@js/lib/MapHelper.js";
 
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-const download = document.getElementById("download") as HTMLButtonElement;
+const downloadImg = document.getElementById("downloadImg") as HTMLButtonElement;
+const downloadSchem = document.getElementById("downloadSchem") as HTMLButtonElement;
 const worldInfo = document.getElementById("worldInfo") as HTMLDivElement;
 
 const error = document.getElementById("error") as HTMLParagraphElement;
@@ -36,7 +37,22 @@ const worldMap = new WorldMap(canvas);
     }
 })(WorldMap.layerNames);
 
-download.addEventListener("click", (event) => {
+downloadImg.addEventListener("click", (event) => {
+    canvas.toBlob((blob) => {
+        if (blob) {
+            global.download(blob, getFileName());
+        }
+    })
+})
+
+downloadSchem.addEventListener("click", (event) => {
+    const writer = new BinaryWriter();
+    MapHelper.SaveAsSchematic(writer, worldMap);
+    const blob = new Blob([writer.data.buffer as ArrayBuffer]);
+    global.download(blob, getFileName() + ".TEditSch");
+})
+
+function getFileName() {
     const layers = layerCheckboxes.map(box => box.checked);
     const toName = [String(worldMap.worldName)];
     for (let i = 0; i < WorldMap.layerNames.length; i++) {
@@ -44,14 +60,8 @@ download.addEventListener("click", (event) => {
             toName.push(WorldMap.layerNames[i])
         }
     }
-    const name = toName.join("-");
-
-    canvas.toBlob((blob) => {
-        if (blob) {
-            global.download(blob, name);
-        }
-    })
-})
+    return toName.join("-");
+}
 
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {

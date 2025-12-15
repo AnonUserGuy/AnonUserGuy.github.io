@@ -122,6 +122,56 @@ export class BinaryReader {
     }
 }
 
+export class BinaryWriter {
+    data: Uint8Array;
+    pos: number;
+    constructor(size = 1024) {
+        this.data = new Uint8Array(size);
+        this.pos = 0;
+    }
+
+    private checkAlloc(n: number) {
+        if (this.pos + n > this.data.length) {
+            const newData = new Uint8Array(this.data.length * 2);
+            newData.set(this.data);
+            this.data = newData;
+        }
+    }
+
+    WriteString(str: string) {
+        const encoded = new TextEncoder().encode(str);
+        this.checkAlloc(encoded.length + 1);
+
+        this.WriteByte(encoded.length);
+        this.data.set(encoded, this.pos);
+        this.pos += encoded.length;
+    }
+
+    WriteBytes(value: number, n: number) {
+        this.checkAlloc(n);
+
+        value <<= (4 - n) * 8;
+
+        for (let i = n - 1; i >= 0; i--) {
+            const shift = (4 - n + i) * 8;
+            this.data[this.pos + i] = (value & (0xFF << shift)) >> shift;
+        }
+        this.pos += n;
+    }
+
+    WriteByte(byte: number) {
+        this.checkAlloc(1);
+        this.data[this.pos++] = byte;
+    }
+
+    WriteInt16(value: number) {
+        this.WriteBytes(value, 2);
+    }
+
+    WriteInt32(value: number) {
+        this.WriteBytes(value, 4);
+    }
+}
 
 class Color {
     R: number;
@@ -2245,6 +2295,28 @@ export class MapHelper {
             worldMap.worldSurfaceEstimated = false;
         }
     }
+
+    static SaveAsSchematic(bw: BinaryWriter, worldMap: WorldMap) {
+        bw.WriteString(worldMap.worldName!);
+        bw.WriteInt32(MapHelper.lastestRelease);
+        bw.WriteInt32(worldMap.width);
+        bw.WriteInt32(worldMap.height);
+
+
+    }
+
+    static SaveTiles(bw: BinaryWriter, worldMap: WorldMap) {
+        for (let x = 0; x < worldMap.width; x++) {
+            for (let y = 0; y < worldMap.height; y++) {
+                const tile = worldMap.tiles[x][y];
+
+            }
+        }
+    }
+
+    static SerializeTileData(tile: MapTile) {
+
+    }
 }
 
 
@@ -2305,6 +2377,8 @@ export class WorldMap {
     private airTiles: number[];
     private airTileWidths: number[];
 
+    public tiles: MapTile[][];
+
     public canvasOutput: HTMLCanvasElement;
 
     public worldName?: string;
@@ -2333,6 +2407,7 @@ export class WorldMap {
         this._height = canvas.height;
         this.airTiles = [];
         this.airTileWidths = [];
+        this.tiles = [];
     }
 
     public get width() {
@@ -2364,6 +2439,7 @@ export class WorldMap {
         })
         this.canvasOutput.width = this._width;
         this.canvasOutput.height = this._height;
+        this.tiles = Array(this._width).fill(Array(this._height));
     }
 
     public render(layersActive: boolean[]) {
@@ -2406,7 +2482,16 @@ export class WorldMap {
         this.airTileWidths = [];
     }
 
+    private fillTileData(x: number, y: number, width: number, height: number, tile: MapTile) {
+        for (let i = 0; i < width; i++) {
+            for (let j = 0; j < height; j++) {
+                this.tiles[x + i][y + j] = tile;
+            }
+        }
+    }
+
     public SetTile(x: number, y: number, width: number, height: number, tile: MapTile) {
+        this.fillTileData(x, y, width, height, tile);
         let ctx: CanvasRenderingContext2D;
         let ctx2: CanvasRenderingContext2D;
         let color: Color;
