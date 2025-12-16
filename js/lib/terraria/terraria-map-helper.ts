@@ -1,15 +1,9 @@
-import * as global from "@js/global.js";
-
-enum TileGroup {
-    Empty,
-    Tile,
-    Wall,
-    Water,
-    Lava,
-    Honey,
-    Air,
-    DirtRock
-}
+import * as global from "@js/global.js"
+import Color from "./net-xna-color.js";
+import BinaryReader from "./net-binary-reader.js";
+import BinaryWriter from "./net-binary-writer.js";
+import MapTile, { TileGroup } from "./terraria-map-tile.js";
+import WorldMap from "./terraria-world-map.js";
 
 enum FileType {
     None,
@@ -18,188 +12,13 @@ enum FileType {
     Player
 }
 
-export class BinaryReader {
-    data: Uint8Array;
-    pos: number;
-    constructor(data: Uint8Array, pos = 0) {
-        this.data = data;
-        this.pos = pos;
-    }
-
-    ReadString(): string {
-        const n = this.ReadByte();
-
-        const start = this.pos;
-        const end = this.pos + n;
-
-        if (end > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        const result = new TextDecoder("utf-8").decode(this.data.slice(start, end));
-        this.pos = end;
-        return result;
-    }
-
-    ReadBytes(n: number, signed: boolean): number {
-        let value = 0;
-
-        if (this.pos + n > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        for (let i = n - 1; i >= 0; i--) {
-            value |= this.data[this.pos + i] << (i * 8);
-        }
-        this.pos += n;
-        if (signed) {
-            value = (value << (4 - n) * 8) >> (4 - n) * 8;
-        }
-        return value;
-    }
-
-    ReadBigBytes(n: number): bigint {
-        let value = 0n;
-
-        if (this.pos + n > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        for (let i = n - 1; i >= 0; i--) {
-            value |= BigInt(this.data[this.pos + i]) << BigInt(i * 8);
-        }
-        this.pos += n;
-
-        return value;
-    }
-
-    ReadBoolean(): boolean {
-        return this.ReadByte() !== 0;
-    }
-
-    ReadByte(): number {
-        if (this.pos >= this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        return this.data[this.pos++];
-    }
-
-    ReadInt16(): number {
-        return this.ReadBytes(2, true);
-    }
-
-    ReadUInt16(): number {
-        return this.ReadBytes(2, false);
-    }
-
-    ReadInt32(): number {
-        // shifting unneccessary for 32-bit cause already hit js's bitwise op size limit
-        return this.ReadBytes(4, false);
-    }
-
-    ReadUInt32(): bigint {
-        return this.ReadBigBytes(4);
-    }
-
-    ReadUInt64(): bigint {
-        return this.ReadBigBytes(8);
-    }
-
-    ReadBitArray(length?: number): boolean[] {
-        if (!length) {
-            length = this.ReadInt16();
-        }
-        const arr: boolean[] = Array(length);
-        let byte = 0;
-        let mask = 128;
-        for (let i = 0; i < length; ++i) {
-            if (mask == 128) {
-                byte = this.ReadByte();
-                mask = 1;
-            } else {
-                mask <<= 1;
-            }
-            if ((byte & mask) === mask) arr[i] = true;
-        }
-        return arr;
-    }
+interface FileMetadata {
+    magicNumber?: string;
+    fileType?: number;
+    revision?: number;
+    favorite?: boolean;
+    isChinese?: boolean;        
 }
-
-export class BinaryWriter {
-    data: Uint8Array;
-    pos: number;
-    constructor(size = 1024) {
-        this.data = new Uint8Array(size);
-        this.pos = 0;
-    }
-
-    private checkAlloc(n: number) {
-        if (this.pos + n > this.data.length) {
-            const newData = new Uint8Array(this.data.length * 2);
-            newData.set(this.data);
-            this.data = newData;
-        }
-    }
-
-    WriteString(str: string) {
-        const encoded = new TextEncoder().encode(str);
-        this.checkAlloc(encoded.length + 1);
-
-        this.WriteByte(encoded.length);
-        this.data.set(encoded, this.pos);
-        this.pos += encoded.length;
-    }
-
-    WriteBytes(value: number, n: number) {
-        this.checkAlloc(n);
-
-        value <<= (4 - n) * 8;
-
-        for (let i = n - 1; i >= 0; i--) {
-            const shift = (4 - n + i) * 8;
-            this.data[this.pos + i] = (value & (0xFF << shift)) >> shift;
-        }
-        this.pos += n;
-    }
-
-    WriteByte(byte: number) {
-        this.checkAlloc(1);
-        this.data[this.pos++] = byte;
-    }
-
-    WriteInt16(value: number) {
-        this.WriteBytes(value, 2);
-    }
-
-    WriteInt32(value: number) {
-        this.WriteBytes(value, 4);
-    }
-}
-
-class Color {
-    R: number;
-    G: number;
-    B: number;
-    A: number;
-    constructor(r: number, g: number, b: number, a = 255) {
-        this.R = r;
-        this.G = g;
-        this.B = b;
-        this.A = a;
-    }
-
-    public toString() {
-        return `rgb(${this.R} ${this.G} ${this.B})`;
-    }
-
-    public copy() {
-        return new Color(this.R, this.G, this.B, this.A);
-    }
-
-    static get Black() { return new Color(0, 0, 0) };
-    static get White() { return new Color(255, 255, 255) };
-    static get Transparent() { return new Color(0, 0, 0, 0) };
-
-    static globalBlack = Color.Black;
-}
-
 
 class OldMapHelper {
     public misc: number;
@@ -274,7 +93,7 @@ class OldMapHelper {
     }
 }
 
-export class MapHelper {
+export default class MapHelper {
     public static lastestRelease = 279;
 
     public static tileCount = 693;
@@ -1889,13 +1708,13 @@ export class MapHelper {
         return MapHelper.colorLookup[tile.Type] || Color.globalBlack;
     }
 
-    public static GetMapTileAirColor(y: number, worldSurface: number) {
+    public static GetMapAirTile(y: number, worldSurface: number) {
         if (y < worldSurface) {
             let depth = Math.floor(256 * (y / worldSurface));
-            return MapHelper.colorLookup[depth + MapHelper.skyPosition];
+            return depth + MapHelper.skyPosition;
         }
         else {
-            return MapHelper.colorLookup[MapHelper.hellPosition];
+            return MapHelper.hellPosition;
         }
     }
 
@@ -1916,22 +1735,26 @@ export class MapHelper {
         } else {
             await MapHelper.LoadMapVersion2(fileIO, release, worldMap);
         }
-        worldMap.DrawUnexploredLayer();
     }
 
     static ReadFileMetadata(fileIO: BinaryReader) {
-        const relogicHeader = fileIO.ReadUInt64();
-        if ((relogicHeader & 0xFFFFFFFFFFFFFFn) !== 27981915666277746n) {
-            throw new TypeError(`Bad file: missing relogic header, not terraria file`);
+        const metadata: FileMetadata = {};
+        metadata.magicNumber = fileIO.ReadString(7);
+        if (metadata.magicNumber !== "relogic") {
+            if (metadata.magicNumber === "xindong") {
+                metadata.isChinese = true;
+            } else {
+                throw new TypeError(`Bad file: missing relogic header, not terraria file`);
+            }
         }
-        const fileType = Number(relogicHeader >> 56n) & 0xFF;
-        if (fileType !== FileType.Map) {
+        metadata.fileType = fileIO.ReadByte();
+        if (metadata.fileType !== FileType.Map) {
             throw new TypeError(`Bad file: is terraria file, but not .map file`);
         }
-        const revision = Number(fileIO.ReadUInt32());
+        metadata.revision = Number(fileIO.ReadUInt32());
         const someBitfield = fileIO.ReadUInt64();
-        const isFavorite = !!(someBitfield & 1n);
-        return [relogicHeader, fileType, revision, isFavorite];
+        metadata.favorite = !!(someBitfield & 1n);
+        return metadata;
     }
 
     static LoadMapVersion1(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
@@ -1948,7 +1771,8 @@ export class MapHelper {
         worldMap.worldName = worldName;
         worldMap.worldId = worldId;
         worldMap.release = release;
-        worldMap.revision = 0;
+        worldMap.revision = -1;
+        worldMap.isChinese = false;
         worldMap.rockLayer = rockLayer;
         worldMap.worldSurface = worldSurface;
         worldMap.worldSurfaceEstimated = true;
@@ -1993,7 +1817,6 @@ export class MapHelper {
                     else if (y < worldSurface) {
                         tileGroup = TileGroup.Air;
                         isGradientType = true;
-                        //const depth = Math.floor(256.0 * (y / worldSurface));
                         tileType = MapHelper.skyPosition;
                     }
                     else if (y < rockLayer) {
@@ -2016,53 +1839,69 @@ export class MapHelper {
                         tileGroup = TileGroup.Air;
                         tileType = MapHelper.hellPosition;
                     }
-                    const tile = MapTile.Create(tileType, light, 0, tileGroup);
+                    let tile = MapTile.Create(tileType, light, 0, tileGroup);
                     let repeated = fileIO.ReadInt16();
 
-                    if (!isGradientType) {
-                        worldMap.SetTile(x, y, 1, repeated + 1, tile);
-                    } else {
-                        worldMap.SetTile(x, y, 1, 1, tile);
-                        let repeated2 = repeated;
-                        let y2 = y;
-                        while (repeated2 > 0) {
-                            repeated2--;
-                            y2++;
-                            if (y2 < worldSurface) {
-                                isGradientType = true;
-                                //const depth = Math.floor(256.0 * (y / worldSurface));
-                                tileType = MapHelper.skyPosition;
+                    if (light === 255)
+					{
+						while (repeated > 0)
+						{
+							repeated--;
+							y++;
+                            if (isGradientType) {
+                                if (y < worldSurface) {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.skyPosition;
+                                }
+                                else if (y < rockLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.dirtPosition;
+                                }
+                                else if (y < underworldLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.rockPosition;
+                                }
+                                else {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.hellPosition;
+                                }
+                                tile = MapTile.Create(tileType, light, 0, tileGroup);
                             }
-                            else if (y2 < rockLayer) {
-                                isGradientType = true;
-                                tileType = tileGroupIndex + MapHelper.dirtPosition;
-                            }
-                            else if (y2 < underworldLayer) {
-                                isGradientType = true;
-                                tileType = tileGroupIndex + MapHelper.rockPosition;
-                            }
-                            else {
-                                isGradientType = true;
-                                tileType = MapHelper.hellPosition;
-                            }
-                            tile.Type = tileType;
-                            worldMap.SetTile(x, y2, 1, 1, tile);
-                        }
-                    }
-
-                    if (light === 255) {
-                        worldMap.SetTileLight(x, y, 1, repeated + 1, tile.Light);
-                        y += repeated;
-                    } else {
-                        worldMap.SetTileLight(x, y, 1, 1, tile.Light);
-                        while (repeated > 0) {
+                            
+                            worldMap.SetTile(x, y, tile);
+						}
+					} else {
+                        while (repeated > 0)
+                        {
                             y++;
                             repeated--;
                             light = fileIO.ReadByte();
-                            if (light <= 18) {
+                            if (light <= 18)
+                            {
                                 continue;
                             }
-                            worldMap.SetTileLight(x, y, 1, 1, light);
+                            if (isGradientType) {
+                                if (y < worldSurface) {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.skyPosition;
+                                }
+                                else if (y < rockLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.dirtPosition;
+                                }
+                                else if (y < underworldLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.rockPosition;
+                                }
+                                else {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.hellPosition;
+                                }
+                                tile = MapTile.Create(tileType, light, 0, tileGroup);
+                            } else {
+                                tile = tile.WithLight(light);
+                            }
+                            worldMap.SetTile(x, y, tile);
                         }
                     }
                 }
@@ -2087,7 +1926,8 @@ export class MapHelper {
         worldMap.worldName = worldName;
         worldMap.worldId = worldId;
         worldMap.release = release;
-        worldMap.revision = metadata ? metadata[2] as number : 0;
+        worldMap.revision = metadata ? metadata.revision! : -1;
+        worldMap.isChinese = metadata ? metadata.isChinese! : false;
         worldMap.rockLayer = rockLayer;
         worldMap.worldSurface = -1;
 
@@ -2182,7 +2022,7 @@ export class MapHelper {
         }
         //const hellOffset = mapTileIndex;
         mapTileTypes[mapTileIndex] = mapTileValue;
-        const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(new Uint8Array(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw")));
+        const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw"));
         for (let y = 0; y < worldHeight; ++y) {
             for (let x = 0; x < worldWidth; ++x) {
                 const tileFlags = deflatedFileIO.ReadByte(); // VVWZYYYX
@@ -2257,7 +2097,6 @@ export class MapHelper {
                     case TileGroup.DirtRock:
                         if (worldMap.worldSurface === -1) {
                             worldMap.worldSurface = y;
-                            worldMap.drawAirTiles();
                         }
                         if (y < rockLayer) {
                             tileTypeIndex += dirtOffset;
@@ -2270,27 +2109,27 @@ export class MapHelper {
                 }
 
                 let tile: MapTile = MapTile.Create(mapTileTypes[tileTypeIndex], light, tileColor >> 1 & 31, tileGroup);
-                worldMap.SetTile(x, y, repeated + 1, 1, tile);
+                worldMap.SetTile(x, y, tile);
 
-                if (light == 255) {
-                    worldMap.SetTileLight(x, y, repeated + 1, 1, light);
-                    x += repeated;
-                    continue;
+                if (light === 255) {
+                    while (repeated > 0) {
+                        x++;
+                        worldMap.SetTile(x, y, tile);
+                        repeated--;
+                    }
                 } else {
-                    worldMap.SetTileLight(x, y, 1, 1, light);
-                }
-                for (; repeated > 0; --repeated) {
-                    ++x;
-                    let light2 = deflatedFileIO.ReadByte();
-                    worldMap.SetTileLight(x, y, 1, 1, light2);
+                    while (repeated > 0) {
+                        x++;
+                        tile = tile.WithLight(deflatedFileIO.ReadByte());
+                        worldMap.SetTile(x, y, tile);
+                        repeated--;
+                    }
                 }
             }
         }
-
         if (worldMap.worldSurface === -1) {
             worldMap.worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
             worldMap.worldSurfaceEstimated = true;
-            worldMap.drawAirTiles();
         } else {
             worldMap.worldSurfaceEstimated = false;
         }
@@ -2305,266 +2144,7 @@ export class MapHelper {
 
     }
 
-    static SaveTiles(bw: BinaryWriter, worldMap: WorldMap) {
-        for (let x = 0; x < worldMap.width; x++) {
-            for (let y = 0; y < worldMap.height; y++) {
-                const tile = worldMap.tiles[x][y];
-
-            }
-        }
-    }
-
     static SerializeTileData(tile: MapTile) {
 
-    }
-}
-
-
-class MapTile {
-    public Type: number;
-    public Light: number;
-    private _extraData: number;
-    public Group: number;
-
-    constructor(type: number, light: number, extraData: number, group: number) {
-        this.Type = type;
-        this.Light = light;
-        this._extraData = extraData;
-        this.Group = group;
-    }
-
-    public get Color() {
-        return this._extraData & 127;
-    }
-    public set Color(value: number) {
-        this._extraData = (this._extraData & 128) | (value & 127);
-    }
-
-    public WithLight(light: number) {
-        return new MapTile(this.Type, light, this._extraData | 128, this.Group);
-    }
-
-    public static Create(type: number, light: number, color: number, group: number) {
-        return new MapTile(type, light, color | 128, group);
-    }
-}
-
-export class WorldMap {
-
-    public layers: HTMLCanvasElement[];
-    public canvasLighting        : HTMLCanvasElement;
-    public canvasTilesPainted    : HTMLCanvasElement;
-    public canvasTiles           : HTMLCanvasElement;
-    public canvasWallsPainted    : HTMLCanvasElement;
-    public canvasWalls           : HTMLCanvasElement;
-    public canvasLiquids         : HTMLCanvasElement;
-    public canvasAir             : HTMLCanvasElement;
-    public canvasUnexplored      : HTMLCanvasElement;
-    
-    public static layerNames = [
-        "Lighting",
-        "Tiles Painted",
-        "Tiles",
-        "Walls Painted",
-        "Walls",
-        "Liquids",
-        "Air",
-        "Unexplored/Explored"
-    ]
-
-    private _width: number;
-    private _height: number;
-    private airTiles: number[];
-    private airTileWidths: number[];
-
-    public tiles: MapTile[][];
-
-    public canvasOutput: HTMLCanvasElement;
-
-    public worldName?: string;
-    public worldId?: number;
-    public release?: number;
-    public revision?: number;
-    public worldSurface?: number;
-    public worldSurfaceEstimated?: boolean;
-    public rockLayer?: number;
-
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvasOutput = canvas;
-        const d = { "width": String(canvas.width), "height": String(canvas.height) };
-
-        this.layers = [];
-        this.layers[0] = this.canvasLighting        = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[1] = this.canvasTilesPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[2] = this.canvasTiles           = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[3] = this.canvasWallsPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[4] = this.canvasWalls           = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[5] = this.canvasLiquids         = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[6] = this.canvasAir             = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[7] = this.canvasUnexplored      = global.createElementEX("canvas", d) as HTMLCanvasElement;
-
-        this._width = canvas.width;
-        this._height = canvas.height;
-        this.airTiles = [];
-        this.airTileWidths = [];
-        this.tiles = [];
-    }
-
-    public get width() {
-        return this._width;
-    }
-    public set width(val: number) {
-        this._width = val;
-        this.updateCanvasDimensions();
-    }
-
-    public get height() {
-        return this._height;
-    }
-    public set height(val: number) {
-        this._height = val;
-        this.updateCanvasDimensions();
-    }
-
-    public setDimensions(w: number, h: number) {
-        this._width = w;
-        this._height = h;
-        this.updateCanvasDimensions();
-    }
-
-    public updateCanvasDimensions() {
-        this.layers.forEach(canvas => {
-            canvas.width = this._width;
-            canvas.height = this._height;
-        })
-        this.canvasOutput.width = this._width;
-        this.canvasOutput.height = this._height;
-        this.tiles = Array(this._width).fill(Array(this._height));
-    }
-
-    public render(layersActive: boolean[]) {
-        const ctxOutput = this.canvasOutput.getContext("2d")!;
-        ctxOutput.clearRect(0, 0, this._width, this._height);
-
-        for (let i = this.layers.length - 1; i >= 0; i--) {
-            if (layersActive[i]) {
-                this.drawCanvas(ctxOutput, this.layers[i]);
-            }
-        }
-    }
-
-    private drawCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-        try {
-            ctx.drawImage(canvas, 0, 0);
-        } catch (e: any) {
-            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty") {
-                throw e;
-            }
-        }
-    }
-
-    public drawAirTiles() {
-        const ctx = this.canvasAir.getContext("2d")!;
-        let y = -1;
-        let color: Color;
-        for (let i = 0; i < this.airTiles.length; i++) {
-            let n = this.airTiles[i];
-            let w = this.airTileWidths[i];
-            let y2 = Math.floor(n / this._width);
-            if (y !== y2) {
-                y = y2;
-                color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
-                ctx.fillStyle = color.toString();
-            }
-            ctx.fillRect(n % this._width, y, w, 1);
-        }
-        this.airTiles = [];
-        this.airTileWidths = [];
-    }
-
-    private fillTileData(x: number, y: number, width: number, height: number, tile: MapTile) {
-        for (let i = 0; i < width; i++) {
-            for (let j = 0; j < height; j++) {
-                this.tiles[x + i][y + j] = tile;
-            }
-        }
-    }
-
-    public SetTile(x: number, y: number, width: number, height: number, tile: MapTile) {
-        this.fillTileData(x, y, width, height, tile);
-        let ctx: CanvasRenderingContext2D;
-        let ctx2: CanvasRenderingContext2D;
-        let color: Color;
-        switch (tile.Group) {
-            case TileGroup.Air:
-                if (this.worldSurface === -1) {
-                    this.airTiles.push(y * this._width + x);
-                    this.airTileWidths.push(width);
-                } else {
-                    color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
-                    ctx = this.canvasAir.getContext("2d")!;
-                    this.drawTile(x, y, width, height, ctx, color);
-                }
-                break;
-            case TileGroup.DirtRock:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasAir.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                break;
-            case TileGroup.Tile:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasTiles.getContext("2d")!;
-                ctx2 = this.canvasTilesPainted.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                this.drawPaintedTile(x, y, width, height, ctx2, color, tile);
-                break;
-            case TileGroup.Wall:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasWalls.getContext("2d")!;
-                ctx2 = this.canvasWallsPainted.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                this.drawPaintedTile(x, y, width, height, ctx2, color, tile);
-                break;
-            case TileGroup.Water:
-            case TileGroup.Lava:
-            case TileGroup.Honey:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasLiquids.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                break;
-        }
-    }
-
-    private drawTile(x: number, y: number, width: number, height: number, ctx: CanvasRenderingContext2D, color: Color) {
-        ctx.fillStyle = color.toString();
-        ctx.fillRect(x, y, width, height);
-    }
-
-    private drawPaintedTile(x: number, y: number, width: number, height: number, ctx2: CanvasRenderingContext2D, color: Color, tile: MapTile) {
-        if (tile.Color > 0) {
-            const colorPainted = color.copy();
-            MapHelper.MapColor(tile.Type, colorPainted, tile.Color);
-            ctx2!.fillStyle = colorPainted.toString();
-            ctx2!.fillRect(x, y, width, height);
-        }
-    }
-
-    public SetTileLight(x: number, y: number, width: number, height: number, light: number) {
-        const ctx3 = this.canvasLighting.getContext("2d")!;
-        ctx3.globalAlpha = 1 - light / 255;
-        ctx3.fillRect(x, y, width, height);
-    }
-
-    public DrawUnexploredLayer() {
-        const ctx = this.canvasUnexplored.getContext("2d")!;
-        ctx.fillStyle = "rgb(0 0 0)";
-        ctx.fillRect(0, 0, this._width, this._height);
-        ctx.globalCompositeOperation = "destination-out";
-
-        for (let i = this.layers.length - 2; i >= 1; i--) {
-            this.drawCanvas(ctx, this.layers[i]);
-        }
-
-        ctx.globalCompositeOperation = "source-over";
     }
 }

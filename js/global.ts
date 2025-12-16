@@ -51,13 +51,13 @@ export function download(file: Blob | File, filename?: string, type?: string) {
 
 }
 
-export function createElementEX(tagName: string, attributes: Attributes = {}, children: (HTMLElement | string)[] = []) {
+export function createElementEX(tagName: string, attributes: Attributes = {}, children: (HTMLElement | any)[] = []) {
     const element = document.createElement(tagName);
     for (const attribute in attributes) {
         element.setAttribute(attribute, attributes[attribute]);
     }
     for (const child of children) {
-        if (typeof child === "string") {
+        if (typeof child !== "object") {
             const textNode = document.createTextNode(child);
             element.appendChild(textNode);
         } else {

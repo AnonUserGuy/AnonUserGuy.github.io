@@ -1,5 +1,6 @@
 import * as global from "@js/global.js";
-import { BinaryReader, BinaryWriter, MapHelper, WorldMap } from "@js/lib/MapHelper.js";
+import WorldMapCanvas from "@js/lib/terraria/terraria-world-map-canvas.js";
+import MapHelper from "@js/lib/terraria/terraria-map-helper.js";
 
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -13,7 +14,23 @@ const info = document.getElementById("info") as HTMLParagraphElement;
 const layerOptions = document.getElementById("layerOptions") as HTMLDivElement;
 const layerCheckboxes: HTMLInputElement[] = [];
 
-const worldMap = new WorldMap(canvas);
+const map = new WorldMapCanvas(canvas);
+//@ts-ignore
+window.map = map;
+
+
+canvas.addEventListener('click', (event) => {
+    const [x, y] = getCursorPosition(canvas, event);
+    console.log(map.tile(x, y).Light);
+});
+
+function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.round(event.clientX - rect.left);
+    const y = Math.round(event.clientY - rect.top);
+    return [x, y];
+}
+
 
 ((layerNames: string[]) => {
     for (let i = layerNames.length - 1; i >= 0; i--) {
@@ -23,8 +40,8 @@ const worldMap = new WorldMap(canvas);
             "type": "checkbox",
             "id": `layer${i}`,
         }) as HTMLInputElement;
-        if (i !== WorldMap.layerNames.length - 1) checkbox.checked = true;
-        checkbox.addEventListener("click", doRender);
+        if (i !== WorldMapCanvas.layerNames.length - 1) checkbox.checked = true;
+        checkbox.addEventListener("click", doDraw);
         const label = global.createElementEX("label", {
             "for": `layer${i}`
         }, [name]) as HTMLLabelElement;
@@ -35,7 +52,7 @@ const worldMap = new WorldMap(canvas);
             label
         ]))
     }
-})(WorldMap.layerNames);
+})(WorldMapCanvas.layerNames);
 
 downloadImg.addEventListener("click", (event) => {
     canvas.toBlob((blob) => {
@@ -46,18 +63,18 @@ downloadImg.addEventListener("click", (event) => {
 })
 
 downloadSchem.addEventListener("click", (event) => {
-    const writer = new BinaryWriter();
+    /* const writer = new BinaryWriter();
     MapHelper.SaveAsSchematic(writer, worldMap);
     const blob = new Blob([writer.data.buffer as ArrayBuffer]);
-    global.download(blob, getFileName() + ".TEditSch");
+    global.download(blob, getFileName() + ".TEditSch"); */
 })
 
 function getFileName() {
     const layers = layerCheckboxes.map(box => box.checked);
-    const toName = [String(worldMap.worldName)];
-    for (let i = 0; i < WorldMap.layerNames.length; i++) {
+    const toName = [String(map.worldName)];
+    for (let i = 0; i < WorldMapCanvas.layerNames.length; i++) {
         if (layers[i]) {
-            toName.push(WorldMap.layerNames[i])
+            toName.push(WorldMapCanvas.layerNames[i])
         }
     }
     return toName.join("-");
@@ -68,29 +85,28 @@ uploadInput.addEventListener("change", async (event) => {
         global.loading(true);
         error.hidden = true;
         info.hidden = true;
-        worldMap.release = -1;
+        map.release = -1;
         try {
             const buffer = await global.promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
-            const fileReader = new BinaryReader(new Uint8Array(buffer));
-            await MapHelper.Load(fileReader, worldMap);
-            doRender();
+            await map.read(buffer);
+            doDraw();
             getWorldInfo();
         } catch (e) {
             console.error(e);
             error.textContent = e!.toString();
             error.hidden = false;
         }
-        if (worldMap.release! > MapHelper.lastestRelease) {
-            info.textContent = `Warning: release ${worldMap.release} newer than latest supported release (${MapHelper.lastestRelease}), might cause issues`
+        if (map.release! > MapHelper.lastestRelease) {
+            info.textContent = `Warning: release ${map.release} newer than latest supported release (${MapHelper.lastestRelease}), might cause issues`
             info.hidden = false;
         }
         global.loading(false);
     }
 });
 
-function doRender() {
+function doDraw() {
     const layers = layerCheckboxes.map(box => box.checked);
-    worldMap.render(layers);
+    map.draw(layers);
 
     if (layers[layers.length - 1] || layers[0] && !layers.slice(1, layers.length - 1).some(val => val)) {
         canvas.classList.add("terraria-map-lighting");
@@ -102,32 +118,32 @@ function doRender() {
 function getWorldInfo() {
     const contents = [
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["World Name: "]),
-            String(worldMap.worldName),
+            global.createElementEX("b", {}, [!map.isChinese ? "World Name: " : "世界名稱: "]),
+            map.worldName,
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["World ID: "]),
-            String(worldMap.worldId),
+            global.createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
+            map.worldId,
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["Version: "]),
-            `${worldMap.release}`,
+            global.createElementEX("b", {}, [!map.isChinese ? "Version: " : "版本: "]),
+            map.release,
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["Times saved: "]),
-            `${worldMap.revision}`,
+            global.createElementEX("b", {}, [!map.isChinese ? "Save count: " : "保存次數: "]),
+            map.revision! > -1 ? map.revision : !map.isChinese ? "unknown" : "未知",
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["Dimensions: "]),
-            `${worldMap.width}x${worldMap.height}`,
+            global.createElementEX("b", {}, [!map.isChinese ? "Dimensions: " : "尺寸: "]),
+            `${map.width}x${map.height}`,
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["Underground depth: "]),
-            `${worldMap.worldSurfaceEstimated ? "~" : ""}${worldMap.worldSurface}`,
+            global.createElementEX("b", {}, [!map.isChinese ? "Underground depth: " : "地下深度: "]),
+            `${map.worldSurfaceEstimated ? "~" : ""}${map.worldSurface}`,
         ]),
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, ["Caverns depth: "]),
-            `~${worldMap.rockLayer}`,
+            global.createElementEX("b", {}, [!map.isChinese ? "Caverns depth: " : "洞穴深度: "]),
+            `~${map.rockLayer}`,
         ]),
     ]
     worldInfo.replaceChildren(...contents);
