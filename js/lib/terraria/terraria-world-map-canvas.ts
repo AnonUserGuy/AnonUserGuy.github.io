@@ -17,7 +17,9 @@ export default class WorldMapCanvas extends WorldMap {
 
     public canvasOutput: HTMLCanvasElement;
 
-    public static layerNames = [
+    private isDrawnAccurate: boolean;
+
+    public static readonly layerNames = [
         "Lighting",
         "Tiles Painted",
         "Tiles",
@@ -32,6 +34,7 @@ export default class WorldMapCanvas extends WorldMap {
         super(canvas.width, canvas.height);
 
         this.canvasOutput = canvas;
+        this.isDrawnAccurate = false;
 
         this.canvases = [];
         this.canvases[0] = this.canvasLighting = new OffscreenCanvas(this._width, this._height);
@@ -57,9 +60,34 @@ export default class WorldMapCanvas extends WorldMap {
         })
         this.canvasOutput.width = this._width;
         this.canvasOutput.height = this._height;
+        this.isDrawnAccurate = false;
     }
 
-    public draw(layersActive: boolean[]) {
+    public drawFast(layersActive: boolean[]) {
+        const ctxOutput = this.canvasOutput.getContext("2d")!;
+        ctxOutput.clearRect(0, 0, this._width, this._height);
+
+        for (let i = this.canvases.length - 1; i >= 0; i--) {
+            if (layersActive[i]) {
+                this.drawCanvasFast(ctxOutput, this.canvases[i]);
+            }
+        }
+        this.isDrawnAccurate = false;
+    }
+
+    private drawCanvasFast(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, canvas: OffscreenCanvas) {
+        try {
+            ctx.drawImage(canvas, 0, 0);
+        } catch (e: any) {
+            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty") {
+                throw e;
+            }
+        }
+    }
+
+    public drawAccurate(layersActive: boolean[]) {
+        if (this.isDrawnAccurate) return;
+
         const ctxOutput = this.canvasOutput.getContext("2d")!;
         ctxOutput.clearRect(0, 0, this._width, this._height);
 
@@ -70,25 +98,18 @@ export default class WorldMapCanvas extends WorldMap {
             }
         }
         
-        this.drawCanvases(ctxOutput, layersOut);
+        this.drawCanvasesAccurate(ctxOutput, layersOut);
+        this.isDrawnAccurate = true;
     }
 
-    private drawCanvases(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, canvases: OffscreenCanvas[]) {
+    private drawCanvasesAccurate(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, canvases: OffscreenCanvas[]) {
+        if (this._width <= 0 || this._height <= 0) return;
+
         const out = new ImageData(this._width, this._height);
         for (const canvas of canvases) {
             const ctx2 = canvas.getContext("2d")!;
             const img = ctx2.getImageData(0, 0, this._width, this._height);
             this.blendImageData(out, img);
-        }
-        ctx.putImageData(out, 0, 0);
-    }
-
-    private eraseCanvases(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, canvases: OffscreenCanvas[]) {
-        const out = ctx.getImageData(0, 0, this._width, this._height);
-        for (const canvas of canvases) {
-            const ctx2 = canvas.getContext("2d")!;
-            const img = ctx2.getImageData(0, 0, this._width, this._height);
-            this.eraseImageData(out, img);
         }
         ctx.putImageData(out, 0, 0);
     }
@@ -242,6 +263,16 @@ export default class WorldMapCanvas extends WorldMap {
             d[i + 2] = ((s[i + 2] * saNorm + d[i + 2] * daNorm * (1 - saNorm)) * invOutA) | 0;
             d[i + 3] = (outA * 255) | 0;
         }
+    }
+
+    private eraseCanvases(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, canvases: OffscreenCanvas[]) {
+        const out = ctx.getImageData(0, 0, this._width, this._height);
+        for (const canvas of canvases) {
+            const ctx2 = canvas.getContext("2d")!;
+            const img = ctx2.getImageData(0, 0, this._width, this._height);
+            this.eraseImageData(out, img);
+        }
+        ctx.putImageData(out, 0, 0);
     }
 
     private eraseImageData(dst: ImageData, src: ImageData) {

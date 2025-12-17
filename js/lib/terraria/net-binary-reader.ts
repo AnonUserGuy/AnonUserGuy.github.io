@@ -2,9 +2,6 @@ export default class BinaryReader {
     data: Uint8Array;
     pos: number;
 
-    constructor(data: ArrayBuffer, pos?: number);
-    constructor(data: Uint8Array, pos?: number);
-    constructor(data: (Uint8Array | ArrayBuffer), pos?: number);
     constructor(data: (Uint8Array | ArrayBuffer), pos = 0) {
         if (data instanceof Uint8Array) {
             this.data = data;

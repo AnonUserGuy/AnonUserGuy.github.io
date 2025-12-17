@@ -21,7 +21,8 @@ window.map = map;
 
 canvas.addEventListener('click', (event) => {
     const [x, y] = getCursorPosition(canvas, event);
-    console.log(map.tile(x, y).Light);
+    const tile = map.tile(x, y);
+    console.log(tile ? map.tile(x, y).Light : "unexplored");
 });
 
 function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
@@ -30,6 +31,8 @@ function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
     const y = Math.round(event.clientY - rect.top);
     return [x, y];
 }
+
+canvas.addEventListener('contextmenu', doDrawAccurate);
 
 
 ((layerNames: string[]) => {
@@ -41,7 +44,7 @@ function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
             "id": `layer${i}`,
         }) as HTMLInputElement;
         if (i !== WorldMapCanvas.layerNames.length - 1) checkbox.checked = true;
-        checkbox.addEventListener("click", doDraw);
+        checkbox.addEventListener("click", doDrawFast);
         const label = global.createElementEX("label", {
             "for": `layer${i}`
         }, [name]) as HTMLLabelElement;
@@ -55,6 +58,7 @@ function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
 })(WorldMapCanvas.layerNames);
 
 downloadImg.addEventListener("click", (event) => {
+    doDrawAccurate();
     canvas.toBlob((blob) => {
         if (blob) {
             global.download(blob, getFileName());
@@ -89,7 +93,7 @@ uploadInput.addEventListener("change", async (event) => {
         try {
             const buffer = await global.promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
             await map.read(buffer);
-            doDraw();
+            doDrawFast();
             getWorldInfo();
         } catch (e) {
             console.error(e);
@@ -106,14 +110,20 @@ uploadInput.addEventListener("change", async (event) => {
 
 function doDraw() {
     const layers = layerCheckboxes.map(box => box.checked);
-    map.draw(layers);
-
     if (layers[layers.length - 1] || layers[0] && !layers.slice(1, layers.length - 1).some(val => val)) {
         canvas.classList.add("terraria-map-lighting");
     } else {
         canvas.classList.remove("terraria-map-lighting");
     }
+    return layers;
 }
+function doDrawFast() { 
+    map.drawFast(doDraw()); 
+}
+function doDrawAccurate() { 
+    map.drawAccurate(doDraw()); 
+}
+
 
 function getWorldInfo() {
     const contents = [

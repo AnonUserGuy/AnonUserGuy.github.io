@@ -22,5 +22,5 @@ export default class Color {
     static get White() { return new Color(255, 255, 255) };
     static get Transparent() { return new Color(0, 0, 0, 0) };
 
-    static globalBlack = Color.Black;
+    static readonly globalBlack = Color.Black;
 }

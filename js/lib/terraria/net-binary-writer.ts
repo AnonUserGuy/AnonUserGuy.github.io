@@ -14,11 +14,13 @@ export default class BinaryWriter {
         }
     }
 
-    WriteString(str: string) {
+    WriteString(str: string, writeLength = true) {
         const encoded = new TextEncoder().encode(str);
-        this.checkAlloc(encoded.length + 1);
+        if (writeLength) {
+            this.WriteByte(encoded.length);
+        }
 
-        this.WriteByte(encoded.length);
+        this.checkAlloc(encoded.length);
         this.data.set(encoded, this.pos);
         this.pos += encoded.length;
     }
