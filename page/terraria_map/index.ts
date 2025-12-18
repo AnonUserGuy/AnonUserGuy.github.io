@@ -24,10 +24,6 @@ const zoomIn = document.getElementById("zoomIn") as HTMLButtonElement;
 const zoomOut = document.getElementById("zoomOut") as HTMLButtonElement;
 
 const map = new WorldMapCanvas(canvas);
-//@ts-ignore
-window.map = map;
-//@ts-ignore
-window.mapHelper = MapHelper;
 
 ((layerNames: string[]) => {
     for (let i = layerNames.length - 1; i >= 0; i--) {
@@ -95,6 +91,7 @@ function doDrawAccurate() {
 
 
 function getWorldInfo() {
+    worldName.textContent = String(map.worldName);
     const contents = [
         global.createElementEX("span", {}, [
             global.createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
