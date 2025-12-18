@@ -2,38 +2,32 @@ import * as global from "@js/global.js";
 import WorldMapCanvas from "@js/lib/terraria/terraria-world-map-canvas.js";
 import MapHelper from "@js/lib/terraria/terraria-map-helper.js";
 
+const mapArea = document.getElementById("mapArea") as HTMLDivElement;
+const mapContainer = document.getElementById("mapContainer") as HTMLDivElement;
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-const downloadImg = document.getElementById("downloadImg") as HTMLButtonElement;
-const downloadSchem = document.getElementById("downloadSchem") as HTMLButtonElement;
+const worldName = document.getElementById("worldName") as HTMLHeadingElement;
 const worldInfo = document.getElementById("worldInfo") as HTMLDivElement;
+const tileInfo = document.getElementById("tileInfo") as HTMLDivElement;
 
 const error = document.getElementById("error") as HTMLParagraphElement;
 const info = document.getElementById("info") as HTMLParagraphElement;
 
+const downloadImg = document.getElementById("downloadImg") as HTMLButtonElement;
+const downloadSchem = document.getElementById("downloadSchem") as HTMLButtonElement;
+
 const layerOptions = document.getElementById("layerOptions") as HTMLDivElement;
 const layerCheckboxes: HTMLInputElement[] = [];
+
+const zoomAmount = document.getElementById("zoomAmount") as HTMLInputElement;
+const zoomIn = document.getElementById("zoomIn") as HTMLButtonElement;
+const zoomOut = document.getElementById("zoomOut") as HTMLButtonElement;
 
 const map = new WorldMapCanvas(canvas);
 //@ts-ignore
 window.map = map;
-
-
-canvas.addEventListener('click', (event) => {
-    const [x, y] = getCursorPosition(canvas, event);
-    const tile = map.tile(x, y);
-    console.log(tile ? map.tile(x, y).Light : "unexplored");
-});
-
-function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
-    const rect = canvas.getBoundingClientRect()
-    const x = Math.round(event.clientX - rect.left);
-    const y = Math.round(event.clientY - rect.top);
-    return [x, y];
-}
-
-canvas.addEventListener('contextmenu', doDrawAccurate);
-
+//@ts-ignore
+window.mapHelper = MapHelper;
 
 ((layerNames: string[]) => {
     for (let i = layerNames.length - 1; i >= 0; i--) {
@@ -57,36 +51,11 @@ canvas.addEventListener('contextmenu', doDrawAccurate);
     }
 })(WorldMapCanvas.layerNames);
 
-downloadImg.addEventListener("click", (event) => {
-    doDrawAccurate();
-    canvas.toBlob((blob) => {
-        if (blob) {
-            global.download(blob, getFileName());
-        }
-    })
-})
-
-downloadSchem.addEventListener("click", (event) => {
-    /* const writer = new BinaryWriter();
-    MapHelper.SaveAsSchematic(writer, worldMap);
-    const blob = new Blob([writer.data.buffer as ArrayBuffer]);
-    global.download(blob, getFileName() + ".TEditSch"); */
-})
-
-function getFileName() {
-    const layers = layerCheckboxes.map(box => box.checked);
-    const toName = [String(map.worldName)];
-    for (let i = 0; i < WorldMapCanvas.layerNames.length; i++) {
-        if (layers[i]) {
-            toName.push(WorldMapCanvas.layerNames[i])
-        }
-    }
-    return toName.join("-");
-}
 
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
         global.loading(true);
+        mapArea.hidden = false;
         error.hidden = true;
         info.hidden = true;
         map.release = -1;
@@ -128,10 +97,6 @@ function doDrawAccurate() {
 function getWorldInfo() {
     const contents = [
         global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "World Name: " : "世界名稱: "]),
-            map.worldName,
-        ]),
-        global.createElementEX("span", {}, [
             global.createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
             map.worldId,
         ]),
@@ -158,5 +123,85 @@ function getWorldInfo() {
     ]
     worldInfo.replaceChildren(...contents);
     worldInfo.classList.add("text-entries");
-    worldInfo.hidden = false;
+    worldInfo.parentElement!.hidden = false;
+    tileInfo.textContent = "Click any tile for more info on it!";
+    tileInfo.hidden = false;
+}
+
+
+let zoom: number;
+pushZoomAmount();
+
+function updateZoom(val: number) {
+    const factor = val / zoom;
+    mapContainer.scrollTop *= factor;
+    mapContainer.scrollLeft *= factor;
+    zoom = val;
+    canvas.style.zoom = String(zoom);
+}
+
+function updateZoomAmount() {
+    zoomAmount.value = String(zoom * 100) + "%";
+}
+function pushZoomAmount() {
+    updateZoom(parseFloat(zoomAmount.value) / 100);
+}
+
+zoomAmount.addEventListener('click', (event) => {
+    zoomAmount.value = String(zoom * 100);
+});
+
+zoomAmount.addEventListener('blur', updateZoomAmount);
+zoomAmount.addEventListener('change', pushZoomAmount);
+
+zoomIn.addEventListener('click', (event) => {
+    updateZoom(zoom * 2);
+    updateZoomAmount();
+});
+zoomOut.addEventListener('click', (event) => {
+    updateZoom(zoom / 2);
+    updateZoomAmount();
+});
+
+canvas.addEventListener('click', (event) => {
+    const [x, y] = getCursorPosition(canvas, event);
+    const tile = map.tile(x, y);
+    tileInfo.textContent = `(${x},${y}): ${tile ? tile.toString() : "Empty"}`;
+});
+
+function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.floor((event.clientX - rect.left) / parseFloat(canvas.style.zoom));
+    const y = Math.floor((event.clientY - rect.top) / parseFloat(canvas.style.zoom));
+    return [x, y];
+}
+
+canvas.addEventListener('contextmenu', doDrawAccurate);
+
+
+
+
+downloadImg.addEventListener("click", (event) => {
+    doDrawAccurate();
+    canvas.toBlob((blob) => {
+        if (blob) {
+            global.download(blob, getFileName());
+        }
+    })
+})
+
+downloadSchem.addEventListener("click", (event) => {
+    const blob = new Blob([map.writeSchematic() as ArrayBuffer]);
+    global.download(blob, map.worldName + ".TEditSch"); 
+})
+
+function getFileName() {
+    const layers = layerCheckboxes.map(box => box.checked);
+    const toName = [String(map.worldName)];
+    for (let i = 0; i < WorldMapCanvas.layerNames.length; i++) {
+        if (layers[i]) {
+            toName.push(WorldMapCanvas.layerNames[i])
+        }
+    }
+    return toName.join("-");
 }

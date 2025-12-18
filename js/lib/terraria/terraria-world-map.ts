@@ -1,8 +1,7 @@
-import * as global from "@js/global.js";
-import Color from "./net-xna-color.js";
 import MapTile, { TileGroup } from "./terraria-map-tile.js";
 import MapHelper from "./terraria-map-helper.js";
 import BinaryReader from "./net-binary-reader.js";
+import BinaryWriter from "./net-binary-writer.js";
 
 export default class WorldMap {
 
@@ -83,5 +82,12 @@ export default class WorldMap {
         const reader = new BinaryReader(data);
         await MapHelper.Load(reader, this);
         this.fixAirTiles();
+    }
+
+    public writeSchematic() {
+        const writer = new BinaryWriter();
+        MapHelper.WriteSchematic(writer, this);
+        writer.trim();
+        return writer.data.buffer;
     }
 }

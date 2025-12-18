@@ -14,6 +14,10 @@ export default class BinaryWriter {
         }
     }
 
+    trim() {
+        this.data = this.data.slice(0, this.pos);
+    }
+
     WriteString(str: string, writeLength = true) {
         const encoded = new TextEncoder().encode(str);
         if (writeLength) {
@@ -48,5 +52,38 @@ export default class BinaryWriter {
 
     WriteInt32(value: number) {
         this.WriteBytes(value, 4);
+    }
+
+    WriteBitArray(values: boolean[], writeLength = true) {
+        if (writeLength) {
+            this.WriteInt16(values.length);
+        }
+
+        let data = 0;
+        let bitMask = 1;
+        for (let i = 0; i < values.length; i++) {
+            if (values[i]) {
+                data = (data | bitMask);
+            }
+
+            if (bitMask != 128) {
+                bitMask = (bitMask << 1);
+            } else {
+                this.WriteByte(data);
+                data = 0;
+                bitMask = 1;
+            }
+        }
+        if (bitMask != 1) {
+            this.WriteByte(data);
+        }
+    }
+
+    WriteUint8Array(array: Uint8Array, start: number, length: number) {
+        this.checkAlloc(length);
+        let end = start + length;
+        for (let i = start; i < end; i++) {
+            this.data[this.pos++] = array[i];
+        }
     }
 }

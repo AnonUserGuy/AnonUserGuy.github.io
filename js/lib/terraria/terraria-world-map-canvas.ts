@@ -2,7 +2,6 @@ import Color from "./net-xna-color.js";
 import MapHelper from "./terraria-map-helper.js";
 import MapTile, { TileGroup } from "./terraria-map-tile.js";
 import WorldMap from "./terraria-world-map.js";
-import * as global from "@js/global.js";
 
 export default class WorldMapCanvas extends WorldMap {
     public canvases: OffscreenCanvas[];

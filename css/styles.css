@@ -10,7 +10,8 @@ summary {
     background-color: lightblue;
     z-index: 1;
     cursor: pointer;
-    height: 53px; /* i am discontent with this solution */
+    height: 53px;
+    /* i am discontent with this solution */
 }
 
 details>details>summary {
@@ -138,15 +139,53 @@ abbr {
     cursor: help;
 }
 
+
+.terraria-map-flexbox {
+    display: flex;
+    gap: 10px;
+}
+
+.terraria-map-manager {
+    flex: 1;
+    min-width: 0;
+}
+
+.terraria-map-area {
+    position: relative;
+    flex: 2;
+}
+
+.terraria-map-buttons {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+.terraria-map-container {
+    overflow: scroll;
+    width: calc(66vw - 8px);
+    height: calc(100vh - 16px);
+}
+
 .terraria-map {
     background-color: black;
-    margin: 10px;
     image-rendering: pixelated;
 }
 
 .terraria-map-lighting {
     background-color: grey;
 }
+
+@media (max-width: 700px) {
+    .terraria-map-flexbox {
+        flex-direction: column;
+    }
+
+    .terraria-map-container {
+        width: calc(100vw - 32px);
+    }
+}
+
 
 .horz-follow {
     position: sticky;
@@ -158,6 +197,7 @@ abbr {
     background-color: salmon;
     margin: 16px;
 }
+
 .info {
     background-color: beige;
     margin: 16px;
