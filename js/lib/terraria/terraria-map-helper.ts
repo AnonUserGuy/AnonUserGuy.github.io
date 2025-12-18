@@ -1,15 +1,10 @@
-import * as global from "@js/global.js";
-
-enum TileGroup {
-    Empty,
-    Tile,
-    Wall,
-    Water,
-    Lava,
-    Honey,
-    Air,
-    DirtRock
-}
+import * as global from "@js/global.js"
+import Color from "./net-xna-color.js";
+import BinaryReader from "./net-binary-reader.js";
+import BinaryWriter from "./net-binary-writer.js";
+import MapTile, { TileGroup } from "./terraria-map-tile.js";
+import WorldMap from "./terraria-world-map.js";
+import TileID from "./id/tile-ids.js";
 
 enum FileType {
     None,
@@ -18,138 +13,13 @@ enum FileType {
     Player
 }
 
-export class BinaryReader {
-    data: Uint8Array;
-    pos: number;
-    constructor(data: Uint8Array, pos = 0) {
-        this.data = data;
-        this.pos = pos;
-    }
-
-    ReadString(): string {
-        const n = this.ReadByte();
-
-        const start = this.pos;
-        const end = this.pos + n;
-
-        if (end > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        const result = new TextDecoder("utf-8").decode(this.data.slice(start, end));
-        this.pos = end;
-        return result;
-    }
-
-    ReadBytes(n: number, signed: boolean): number {
-        let value = 0;
-
-        if (this.pos + n > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        for (let i = n - 1; i >= 0; i--) {
-            value |= this.data[this.pos + i] << (i * 8);
-        }
-        this.pos += n;
-        if (signed) {
-            value = (value << (4 - n) * 8) >> (4 - n) * 8;
-        }
-        return value;
-    }
-
-    ReadBigBytes(n: number): bigint {
-        let value = 0n;
-
-        if (this.pos + n > this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        for (let i = n - 1; i >= 0; i--) {
-            value |= BigInt(this.data[this.pos + i]) << BigInt(i * 8);
-        }
-        this.pos += n;
-
-        return value;
-    }
-
-    ReadBoolean(): boolean {
-        return this.ReadByte() !== 0;
-    }
-
-    ReadByte(): number {
-        if (this.pos >= this.data.length) {
-            throw RangeError("Reached end of file");
-        }
-        return this.data[this.pos++];
-    }
-
-    ReadInt16(): number {
-        return this.ReadBytes(2, true);
-    }
-
-    ReadUInt16(): number {
-        return this.ReadBytes(2, false);
-    }
-
-    ReadInt32(): number {
-        // shifting unneccessary for 32-bit cause already hit js's bitwise op size limit
-        return this.ReadBytes(4, false);
-    }
-
-    ReadUInt32(): bigint {
-        return this.ReadBigBytes(4);
-    }
-
-    ReadUInt64(): bigint {
-        return this.ReadBigBytes(8);
-    }
-
-    ReadBitArray(length?: number): boolean[] {
-        if (!length) {
-            length = this.ReadInt16();
-        }
-        const arr: boolean[] = Array(length);
-        let byte = 0;
-        let mask = 128;
-        for (let i = 0; i < length; ++i) {
-            if (mask == 128) {
-                byte = this.ReadByte();
-                mask = 1;
-            } else {
-                mask <<= 1;
-            }
-            if ((byte & mask) === mask) arr[i] = true;
-        }
-        return arr;
-    }
+interface FileMetadata {
+    magicNumber?: string;
+    fileType?: number;
+    revision?: number;
+    favorite?: boolean;
+    isChinese?: boolean;
 }
-
-
-class Color {
-    R: number;
-    G: number;
-    B: number;
-    A: number;
-    constructor(r: number, g: number, b: number, a = 255) {
-        this.R = r;
-        this.G = g;
-        this.B = b;
-        this.A = a;
-    }
-
-    public toString() {
-        return `rgb(${this.R} ${this.G} ${this.B})`;
-    }
-
-    public copy() {
-        return new Color(this.R, this.G, this.B, this.A);
-    }
-
-    static get Black() { return new Color(0, 0, 0) };
-    static get White() { return new Color(255, 255, 255) };
-    static get Transparent() { return new Color(0, 0, 0, 0) };
-
-    static globalBlack = Color.Black;
-}
-
 
 class OldMapHelper {
     public misc: number;
@@ -224,13 +94,15 @@ class OldMapHelper {
     }
 }
 
-export class MapHelper {
+export default class MapHelper {
     public static lastestRelease = 279;
 
     public static tileCount = 693;
     public static wallCount = 347;
-    public static liquidCount = 4;
-
+    public static maxLiquidTypes = 4;
+    private static maxSkyGradients = 256;
+    private static maxDirtGradients = 256;
+    private static maxRockGradients = 256;
 
     private static snowTypes: number[];
     private static colorLookup: Color[];
@@ -248,7 +120,67 @@ export class MapHelper {
     public static tileOptionCounts: number[];
     public static wallOptionCounts: number[];
 
+    public static tileFrameImportant: boolean[];
+    public static idLookup: number[];
+    public static optionLookup: number[];
+
     static {
+        const tileFrameImportantIndexes = [
+            TileID.Benches,
+            TileID.Platforms,
+            TileID.Chairs,
+            TileID.LilyPad,
+            TileID.Cattail,
+            TileID.Torches,
+            TileID.SoulBottles,
+            TileID.Containers,
+            TileID.FakeContainers,
+            TileID.Containers2,
+            TileID.FakeContainers2,
+            TileID.GolfTrophies,
+            TileID.Pots,
+            TileID.PotsEcho,
+            TileID.Sunflower,
+            TileID.ShadowOrbs,
+            TileID.DemonAltar,
+            TileID.Traps,
+            TileID.ImmatureHerbs,
+            TileID.MatureHerbs,
+            TileID.BloomingHerbs,
+            TileID.PotsSuspended,
+            TileID.Statues,
+            TileID.AdamantiteForge,
+            TileID.MythrilAnvil,
+            TileID.Stalactite,
+            TileID.ExposedGems,
+            TileID.LongMoss,
+            TileID.SmallPiles1x1Echo,
+            TileID.SmallPiles2x1Echo,
+            TileID.SmallPiles, 
+            TileID.LargePiles,
+            TileID.LargePilesEcho,
+            TileID.LargePiles2,
+            TileID.LargePiles2Echo,
+            TileID.DyePlants,
+            TileID.Crystals,
+            TileID.Painting3X3,
+            TileID.Painting6X4,
+            TileID.GemLocks,
+            TileID.PartyPresent,
+            TileID.SillyBalloonTile,
+            TileID.LogicGateLamp,
+            TileID.WeightedPressurePlate,
+            TileID.LogicGate,
+            TileID.LogicSensor,
+            TileID.GolfCupFlag,
+            TileID.PottedPlants2,
+            TileID.TeleportationPylon
+        ]
+        this.tileFrameImportant = Array(MapHelper.tileCount);
+        for (let i = 0; i < tileFrameImportantIndexes.length; i++) {
+            this.tileFrameImportant[tileFrameImportantIndexes[i]] = true;
+        }
+
         const tileColors: Color[][] = Array(MapHelper.tileCount);
         for (let i = 0; i < MapHelper.tileCount; i++) {
             tileColors[i] = Array(12);
@@ -1586,7 +1518,7 @@ export class MapHelper {
         wallColors[320][0] = new Color(75, 30, 15);
         wallColors[321][0] = new Color(91, 108, 130);
         wallColors[322][0] = new Color(91, 108, 130);
-        const skyGradient: Color[] = Array(256);
+        const skyGradient: Color[] = Array(MapHelper.maxSkyGradients);
         let skyColorMin = new Color(50, 40, 255);
         let skyColorMax = new Color(145, 185, 255);
         for (let num6 = 0; num6 < skyGradient.length; num6++) {
@@ -1594,7 +1526,7 @@ export class MapHelper {
             let num8 = 1 - num7;
             skyGradient[num6] = new Color((skyColorMin.R * num8 + skyColorMax.R * num7), (skyColorMin.G * num8 + skyColorMax.G * num7), (skyColorMin.B * num8 + skyColorMax.B * num7));
         }
-        const dirtGradient: Color[] = Array(256);
+        const dirtGradient: Color[] = Array(MapHelper.maxDirtGradients);
         let dirtColorMin = new Color(88, 61, 46);
         let dirtRockColorMax = new Color(37, 78, 123);
         for (let num9 = 0; num9 < dirtGradient.length; num9++) {
@@ -1602,7 +1534,7 @@ export class MapHelper {
             let num11 = 1 - num10;
             dirtGradient[num9] = new Color((dirtColorMin.R * num11 + dirtRockColorMax.R * num10), (dirtColorMin.G * num11 + dirtRockColorMax.G * num10), (dirtColorMin.B * num11 + dirtRockColorMax.B * num10));
         }
-        const RockGradient: Color[] = Array(256);
+        const RockGradient: Color[] = Array(MapHelper.maxRockGradients);
         let rockColorMin = new Color(74, 67, 60);
         dirtRockColorMax = new Color(53, 70, 97);
         for (let num12 = 0; num12 < RockGradient.length; num12++) {
@@ -1635,12 +1567,16 @@ export class MapHelper {
         MapHelper.colorLookup[0] = Color.Transparent;
         let lookupIndex = (MapHelper.tilePosition = 1);
         MapHelper.tileLookup = Array(MapHelper.tileCount);
+        MapHelper.idLookup = Array(MapHelper.tileCount);
+        MapHelper.optionLookup = Array(MapHelper.tileCount);
         for (let i = 0; i < MapHelper.tileCount; i++) {
             if (MapHelper.tileOptionCounts[i] > 0) {
                 let _ = tileColors[i];
                 MapHelper.tileLookup[i] = lookupIndex;
                 for (let j = 0; j < MapHelper.tileOptionCounts[i]; j++) {
                     MapHelper.colorLookup[lookupIndex] = tileColors[i][j];
+                    MapHelper.idLookup[lookupIndex] = i;
+                    MapHelper.optionLookup[lookupIndex] = j;
                     lookupIndex++;
                 }
             }
@@ -1657,6 +1593,8 @@ export class MapHelper {
                 MapHelper.wallLookup[i] = lookupIndex;
                 for (let j = 0; j < MapHelper.wallOptionCounts[i]; j++) {
                     MapHelper.colorLookup[lookupIndex] = wallColors[i][j];
+                    MapHelper.idLookup[lookupIndex] = i;
+                    MapHelper.optionLookup[lookupIndex] = j;
                     lookupIndex++;
                 }
             }
@@ -1668,6 +1606,7 @@ export class MapHelper {
         MapHelper.liquidPosition = lookupIndex;
         for (let i = 0; i < 4; i++) {
             MapHelper.colorLookup[lookupIndex] = liquidColors[i];
+            MapHelper.idLookup[lookupIndex] = i;
             lookupIndex++;
         }
         MapHelper.skyPosition = lookupIndex;
@@ -1839,13 +1778,13 @@ export class MapHelper {
         return MapHelper.colorLookup[tile.Type] || Color.globalBlack;
     }
 
-    public static GetMapTileAirColor(y: number, worldSurface: number) {
+    public static GetMapAirTile(y: number, worldSurface: number) {
         if (y < worldSurface) {
-            let depth = Math.floor(256 * (y / worldSurface));
-            return MapHelper.colorLookup[depth + MapHelper.skyPosition];
+            let depth = Math.floor(MapHelper.maxSkyGradients * (y / worldSurface));
+            return depth + MapHelper.skyPosition;
         }
         else {
-            return MapHelper.colorLookup[MapHelper.hellPosition];
+            return MapHelper.hellPosition;
         }
     }
 
@@ -1859,6 +1798,366 @@ export class MapHelper {
         return Math.round(0.9 * worldHeight - 125);
     }
 
+
+    public static getFrameFromBaseOption(tileType: number, baseOption: number) {
+        const tileCache = {
+            frameX: 0,
+            frameY: 0
+        };
+        switch (tileType) {
+            case TileID.Benches:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 0:
+                            n = 0; // 21, 23
+                            break;
+                        case 2:
+                            n = 43;
+                            break;
+                        case 1:
+                        default:
+                            n = 1; // ?
+                            break;
+                    }
+                    tileCache.frameX = n * 54;
+                    break;
+                }
+            case TileID.RainbowBrick:
+            case TileID.RainbowMoss:
+            case TileID.RainbowMossBrick:
+            case TileID.RainbowMossBlock:
+                // position dependent
+                break;
+            case TileID.SandDrip:
+            case TileID.Cactus:
+            case TileID.SeaOats:
+            case TileID.OasisPlants:
+                // base option stores corrupt/crimsoned/hallowed
+                break;
+            case TileID.Platforms:
+                if (baseOption === 1) {
+                    tileCache.frameY = 48 * 18;
+                }
+                break;
+            case TileID.Chairs:
+                if (baseOption === 1) {
+                    tileCache.frameY = 1 * 40; // 20
+                }
+                break;
+            case TileID.LilyPad:
+            case TileID.Cattail:
+                tileCache.frameY = baseOption * 18;
+                break;
+            case TileID.Torches:
+                if (baseOption === 1) {
+                    tileCache.frameX = 66;
+                }
+                break;
+            case TileID.SoulBottles:
+                tileCache.frameY = baseOption * 36;
+                break;
+            case TileID.Containers:
+            case TileID.FakeContainers:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 1:
+                            n = 1; // 2, 10, 13, 15
+                            break;
+                        case 2:
+                            n = 3; // 4
+                            break;
+                        case 3:
+                            n = 6;
+                            break;
+                        case 4:
+                            n = 11; // 17
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    }
+                    tileCache.frameX = n * 36;
+                    break;
+                }
+            case TileID.Containers2:
+            case TileID.FakeContainers2:
+                tileCache.frameX = baseOption * 36;
+                break;
+            case TileID.GolfTrophies:
+                tileCache.frameX = baseOption * 36;
+                break;
+            case TileID.Pots:
+            case TileID.PotsEcho:
+                tileCache.frameY = baseOption * 108;
+                break;
+            case TileID.Sunflower:
+                if (baseOption === 1) {
+                    tileCache.frameY = 34;
+                }
+                break;
+            case TileID.ShadowOrbs:
+                if (baseOption === 1) {
+                    tileCache.frameX = 36;
+                }
+                break;
+            case TileID.DemonAltar:
+                if (baseOption === 1) {
+                    tileCache.frameX = 54;
+                }
+                break;
+            case TileID.Traps:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 1:
+                            n = 1; // 2, 3, 4
+                        case 2:
+                            n = 5;
+                        default:
+                            n = 0;
+                    }
+                    tileCache.frameY = n * 18;
+                    break;
+                }
+            case TileID.ImmatureHerbs:
+            case TileID.MatureHerbs:
+            case TileID.BloomingHerbs:
+                tileCache.frameX = baseOption * 18;
+                break;
+            case TileID.PotsSuspended:
+                tileCache.frameX = baseOption * 36;
+                break;
+            case TileID.Statues:
+                switch (baseOption) {
+                    case 1:
+                        tileCache.frameX = 1548;
+                        break;
+                    case 2:
+                        tileCache.frameX = 1656;
+                        break;
+                    default:
+                        tileCache.frameX = 0;
+                        break;
+                }
+                break;
+            case TileID.AdamantiteForge:
+                if (baseOption === 1) {
+                    tileCache.frameX = 52;
+                }
+                break;
+            case TileID.MythrilAnvil:
+                if (baseOption === 1) {
+                    tileCache.frameX = 28;
+                }
+                break;
+            case TileID.HolidayLights:
+                // position dependent
+                break;
+            case TileID.Stalactite:
+                tileCache.frameX = baseOption * 52;
+                break;
+            case TileID.ExposedGems:
+                tileCache.frameX = baseOption * 18;
+                break;
+            case TileID.LongMoss:
+                tileCache.frameX = baseOption * 22;
+                break;
+            case TileID.SmallPiles1x1Echo:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 0:
+                            n = 0; // 0~5, 19, 20, 21, 22, 23, 24, 33, 38, 39, 40, 41~58
+                            break;
+                        case 2:
+                            n = 6; // 6~15, 59~61
+                            break;
+                        case 1:
+                            n = 16; // 16~18, 31, 32
+                            break;
+                        case 3:
+                            n = 25; // 25~30
+                            break;
+                        case 4:
+                            n = 34; // 34~37
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    }
+                    tileCache.frameX = (n % 18) * 36;
+                    tileCache.frameY = Math.floor(n / 18) + 1 * 18;
+                    break;
+                }
+            case TileID.SmallPiles2x1Echo:
+            case TileID.SmallPiles: // can also do one above but not determinable from just baseOption
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 0:
+                            n = 0; // 0~5, 28, 29, 30, 31, 32, 54~71
+                            break;
+                        case 1:
+                            n = 6; // 6~11, 33, 34, 35, 72
+                            break;
+                        case 2:
+                            n = 12; // 12~27
+                            break;
+                        case 3:
+                            n = 36; // 36~47
+                            break;
+                        case 4:
+                            n = 48; // 48~53
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    }
+                    tileCache.frameX = n * 18;
+                    break;
+                }
+            case TileID.LargePiles:
+            case TileID.LargePilesEcho:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 2:
+                            n = 0; // 0~6
+                            break;
+                        case 0:
+                            n = 7; // 7~21, 33, 34, 35
+                            break;
+                        case 1:
+                            n = 22; // 22~24
+                            break;
+                        case 5:
+                            n = 25; // 25
+                            break;
+                        case 3:
+                            n = 26; // 26~31
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    }
+                    tileCache.frameX = n * 54;
+                    break;
+                }
+            case TileID.LargePiles2:
+            case TileID.LargePiles2Echo:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 0:
+                            n = 0; // 0~2, 14, 15, 16, 23~24, 29~46
+                            break;
+                        case 6:
+                            n = 3; // 3~5
+                            break;
+                        case 7:
+                            n = 6; // 6~8
+                            break;
+                        case 4:
+                            n = 9; // 9~13, 17
+                            break;
+                        case 8:
+                            n = 18; // 18~22
+                            break;
+                        case 1:
+                            n = 25; // 25~28, 47~49
+                            break;
+                        case 10:
+                            n = 50; // 50~51
+                            break;
+                        case 2:
+                            n = 52; // 52~55
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    } // 3, 5, 9 skipped?
+                    tileCache.frameX = (n % 36) * 54;
+                    tileCache.frameY = Math.floor(n / 36) * 36;
+                    break;
+                }
+            case TileID.DyePlants:
+                tileCache.frameX = baseOption * 34;
+                break;
+            case TileID.Crystals:
+                if (baseOption === 1) {
+                    tileCache.frameX = 324;
+                }
+                break;
+            case TileID.Painting3X3:
+                {
+                    let n: number;
+                    switch (baseOption) {
+                        case 0:
+                            n = 0;
+                            break;
+                        case 1:
+                            n = 12;
+                            break;
+                        case 2:
+                            n = 16;
+                            break;
+                        case 3:
+                            n = 41;
+                            break;
+                        case 4:
+                            n = 46;
+                            break;
+                        default:
+                            n = 0;
+                            break;
+                    }
+                    tileCache.frameX = (n % 36) * 54;
+                    tileCache.frameY = Math.floor(n / 36) * 54;
+                    break;
+                }
+            case TileID.Painting6X4:
+                {
+                    let n: number;
+                    if (baseOption === 1) {
+                        n = 22;
+                    } else {
+                        n = 0;
+                    }
+                    tileCache.frameY = n * 72;
+                    break;
+                }
+            case TileID.GemLocks:
+                tileCache.frameX = baseOption * 54;
+                break;
+            case TileID.PartyPresent:
+            case TileID.SillyBalloonTile:
+                tileCache.frameX * baseOption * 36;
+                break;
+            case TileID.LogicGateLamp:
+                tileCache.frameX = baseOption * 18;
+                break;
+            case TileID.WeightedPressurePlate:
+            case TileID.LogicGate:
+            case TileID.LogicSensor:
+                tileCache.frameY = baseOption * 18;
+                break;
+            case TileID.GolfCupFlag:
+                tileCache.frameX = baseOption * 18;
+                break;
+            case TileID.PottedPlants2:
+                if (baseOption === 1) {
+                    tileCache.frameX = 8 * 54
+                }
+                break;
+            case TileID.TeleportationPylon:
+                tileCache.frameX = baseOption * 54;
+                break;
+        }
+        return tileCache;
+    }
+
     public static async Load(fileIO: BinaryReader, worldMap: WorldMap) {
         const release = fileIO.ReadInt32();
         if (release <= 91) {
@@ -1866,22 +2165,26 @@ export class MapHelper {
         } else {
             await MapHelper.LoadMapVersion2(fileIO, release, worldMap);
         }
-        worldMap.DrawUnexploredLayer();
     }
 
     static ReadFileMetadata(fileIO: BinaryReader) {
-        const relogicHeader = fileIO.ReadUInt64();
-        if ((relogicHeader & 0xFFFFFFFFFFFFFFn) !== 27981915666277746n) {
-            throw new TypeError(`Bad file: missing relogic header, not terraria file`);
+        const metadata: FileMetadata = {};
+        metadata.magicNumber = fileIO.ReadString(7);
+        if (metadata.magicNumber !== "relogic") {
+            if (metadata.magicNumber === "xindong") {
+                metadata.isChinese = true;
+            } else {
+                throw new TypeError(`Bad file: missing relogic header, not terraria file`);
+            }
         }
-        const fileType = Number(relogicHeader >> 56n) & 0xFF;
-        if (fileType !== FileType.Map) {
+        metadata.fileType = fileIO.ReadByte();
+        if (metadata.fileType !== FileType.Map) {
             throw new TypeError(`Bad file: is terraria file, but not .map file`);
         }
-        const revision = Number(fileIO.ReadUInt32());
+        metadata.revision = Number(fileIO.ReadUInt32());
         const someBitfield = fileIO.ReadUInt64();
-        const isFavorite = !!(someBitfield & 1n);
-        return [relogicHeader, fileType, revision, isFavorite];
+        metadata.favorite = !!(someBitfield & 1n);
+        return metadata;
     }
 
     static LoadMapVersion1(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
@@ -1898,7 +2201,8 @@ export class MapHelper {
         worldMap.worldName = worldName;
         worldMap.worldId = worldId;
         worldMap.release = release;
-        worldMap.revision = 0;
+        worldMap.revision = -1;
+        worldMap.isChinese = false;
         worldMap.rockLayer = rockLayer;
         worldMap.worldSurface = worldSurface;
         worldMap.worldSurfaceEstimated = true;
@@ -1943,7 +2247,6 @@ export class MapHelper {
                     else if (y < worldSurface) {
                         tileGroup = TileGroup.Air;
                         isGradientType = true;
-                        //const depth = Math.floor(256.0 * (y / worldSurface));
                         tileType = MapHelper.skyPosition;
                     }
                     else if (y < rockLayer) {
@@ -1966,45 +2269,36 @@ export class MapHelper {
                         tileGroup = TileGroup.Air;
                         tileType = MapHelper.hellPosition;
                     }
-                    const tile = MapTile.Create(tileType, light, 0, tileGroup);
+                    let tile = MapTile.Create(tileType, light, 0, tileGroup, MapHelper.idLookup[tileType], MapHelper.optionLookup[tileType]);
                     let repeated = fileIO.ReadInt16();
 
-                    if (!isGradientType) {
-                        worldMap.SetTile(x, y, 1, repeated + 1, tile);
-                    } else {
-                        worldMap.SetTile(x, y, 1, 1, tile);
-                        let repeated2 = repeated;
-                        let y2 = y;
-                        while (repeated2 > 0) {
-                            repeated2--;
-                            y2++;
-                            if (y2 < worldSurface) {
-                                isGradientType = true;
-                                //const depth = Math.floor(256.0 * (y / worldSurface));
-                                tileType = MapHelper.skyPosition;
-                            }
-                            else if (y2 < rockLayer) {
-                                isGradientType = true;
-                                tileType = tileGroupIndex + MapHelper.dirtPosition;
-                            }
-                            else if (y2 < underworldLayer) {
-                                isGradientType = true;
-                                tileType = tileGroupIndex + MapHelper.rockPosition;
-                            }
-                            else {
-                                isGradientType = true;
-                                tileType = MapHelper.hellPosition;
-                            }
-                            tile.Type = tileType;
-                            worldMap.SetTile(x, y2, 1, 1, tile);
-                        }
-                    }
-
                     if (light === 255) {
-                        worldMap.SetTileLight(x, y, 1, repeated + 1, tile.Light);
-                        y += repeated;
+                        while (repeated > 0) {
+                            repeated--;
+                            y++;
+                            if (isGradientType) {
+                                if (y < worldSurface) {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.skyPosition;
+                                }
+                                else if (y < rockLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.dirtPosition;
+                                }
+                                else if (y < underworldLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.rockPosition;
+                                }
+                                else {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.hellPosition;
+                                }
+                                tile = MapTile.Create(tileType, light, 0, tileGroup, MapHelper.idLookup[tileType], MapHelper.optionLookup[tileType]);
+                            }
+
+                            worldMap.SetTile(x, y, tile);
+                        }
                     } else {
-                        worldMap.SetTileLight(x, y, 1, 1, tile.Light);
                         while (repeated > 0) {
                             y++;
                             repeated--;
@@ -2012,7 +2306,28 @@ export class MapHelper {
                             if (light <= 18) {
                                 continue;
                             }
-                            worldMap.SetTileLight(x, y, 1, 1, light);
+                            if (isGradientType) {
+                                if (y < worldSurface) {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.skyPosition;
+                                }
+                                else if (y < rockLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.dirtPosition;
+                                }
+                                else if (y < underworldLayer) {
+                                    tileGroup = TileGroup.DirtRock;
+                                    tileType = tileGroupIndex + MapHelper.rockPosition;
+                                }
+                                else {
+                                    tileGroup = TileGroup.Air;
+                                    tileType = MapHelper.hellPosition;
+                                }
+                                tile = MapTile.Create(tileType, light, 0, tileGroup, MapHelper.idLookup[tileType], MapHelper.optionLookup[tileType]);
+                            } else {
+                                tile = tile.WithLight(light);
+                            }
+                            worldMap.SetTile(x, y, tile);
                         }
                     }
                 }
@@ -2023,6 +2338,8 @@ export class MapHelper {
             }
         }
     }
+
+
 
     static async LoadMapVersion2(fileIO: BinaryReader, release: number, worldMap: WorldMap) {
         const metadata = release > 135 ? MapHelper.ReadFileMetadata(fileIO) : null;
@@ -2037,7 +2354,8 @@ export class MapHelper {
         worldMap.worldName = worldName;
         worldMap.worldId = worldId;
         worldMap.release = release;
-        worldMap.revision = metadata ? metadata[2] as number : 0;
+        worldMap.revision = metadata ? metadata.revision! : -1;
+        worldMap.isChinese = metadata ? metadata.isChinese! : false;
         worldMap.rockLayer = rockLayer;
         worldMap.worldSurface = -1;
 
@@ -2047,92 +2365,92 @@ export class MapHelper {
         const airCount = fileIO.ReadInt16();
         const dirtCount = fileIO.ReadInt16();
         const rockCount = fileIO.ReadInt16();
-        const tileSpritesImportant = fileIO.ReadBitArray(tileCount);
-        const wallSpritesImportant = fileIO.ReadBitArray(wallCount);
-        const tileSprites = new Uint8Array(tileCount);
+        const tileHasOptions = fileIO.ReadBitArray(tileCount);
+        const wallHasOptions = fileIO.ReadBitArray(wallCount);
+        const tileOptionCounts = new Uint8Array(tileCount);
         let tileTotal = 0;
         for (let i = 0; i < tileCount; ++i) {
-            tileSprites[i] = !tileSpritesImportant[i] ? 1 : fileIO.ReadByte();
-            tileTotal += tileSprites[i];
+            tileOptionCounts[i] = !tileHasOptions[i] ? 1 : fileIO.ReadByte();
+            tileTotal += tileOptionCounts[i];
         }
-        const wallSprites = new Uint8Array(wallCount);
+        const wallOptionCounts = new Uint8Array(wallCount);
         let wallTotal = 0;
         for (let i = 0; i < wallCount; ++i) {
-            wallSprites[i] = !wallSpritesImportant[i] ? 1 : fileIO.ReadByte();
-            wallTotal += wallSprites[i];
+            wallOptionCounts[i] = !wallHasOptions[i] ? 1 : fileIO.ReadByte();
+            wallTotal += wallOptionCounts[i];
         }
-        const mapTileTypes = new Uint16Array(tileTotal + wallTotal + liquidCount + airCount + dirtCount + rockCount + 2);
-        mapTileTypes[0] = 0;
-        let mapTileValue = 1;
-        let mapTileIndex = 1;
-        const tileOffset = mapTileIndex;
+        const tileTypes = new Uint16Array(tileTotal + wallTotal + liquidCount + airCount + dirtCount + rockCount + 2);
+        tileTypes[0] = 0;
+        let indexLatest = 1;
+        let index = 1;
+        const tileOffset = index;
         for (let i = 0; i < MapHelper.tileCount; ++i) {
             if (i < tileCount) {
-                const tileVariants = tileSprites[i];
-                const tileOptionCount = MapHelper.tileOptionCounts[i];
-                for (let j = 0; j < tileOptionCount; ++j) {
-                    if (j < tileVariants) {
-                        mapTileTypes[mapTileIndex] = mapTileValue;
-                        ++mapTileIndex;
+                const tileOptions = tileOptionCounts[i];
+                const tileOptionsLatest = MapHelper.tileOptionCounts[i];
+                for (let j = 0; j < tileOptionsLatest; ++j) {
+                    if (j < tileOptions) {
+                        tileTypes[index] = indexLatest;
+                        ++index;
                     }
-                    ++mapTileValue;
+                    ++indexLatest;
                 }
             }
             else {
-                mapTileValue += MapHelper.tileOptionCounts[i];
+                indexLatest += MapHelper.tileOptionCounts[i];
             }
         }
-        const wallOffset = mapTileIndex;
+        const wallOffset = index;
         for (let i = 0; i < MapHelper.wallCount; ++i) {
             if (i < wallCount) {
-                const wallVariants = wallSprites[i];
-                const wallOptionCount = MapHelper.wallOptionCounts[i];
-                for (let j = 0; j < wallOptionCount; ++j) {
-                    if (j < wallVariants) {
-                        mapTileTypes[mapTileIndex] = mapTileValue;
-                        ++mapTileIndex;
+                const wallOptions = wallOptionCounts[i];
+                const wallOptionsLatest = MapHelper.wallOptionCounts[i];
+                for (let j = 0; j < wallOptionsLatest; ++j) {
+                    if (j < wallOptions) {
+                        tileTypes[index] = indexLatest;
+                        ++index;
                     }
-                    ++mapTileValue;
+                    ++indexLatest;
                 }
             }
             else
-                mapTileValue += MapHelper.wallOptionCounts[i];
+                indexLatest += MapHelper.wallOptionCounts[i];
         }
-        const liquidOffset = mapTileIndex;
-        for (let i = 0; i < MapHelper.liquidCount; ++i) {
+        const liquidOffset = index;
+        for (let i = 0; i < MapHelper.maxLiquidTypes; ++i) {
             if (i < liquidCount) {
-                mapTileTypes[mapTileIndex] = mapTileValue;
-                ++mapTileIndex;
+                tileTypes[index] = indexLatest;
+                ++index;
             }
-            ++mapTileValue;
+            ++indexLatest;
         }
-        const airOffset = mapTileIndex;
-        for (let i = 0; i < 256; ++i) {
+        const airOffset = index;
+        for (let i = 0; i < MapHelper.maxSkyGradients; ++i) {
             if (i < airCount) {
-                mapTileTypes[mapTileIndex] = mapTileValue;
-                ++mapTileIndex;
+                tileTypes[index] = indexLatest;
+                ++index;
             }
-            ++mapTileValue;
+            ++indexLatest;
         }
-        const dirtOffset = mapTileIndex;
-        for (let i = 0; i < 256; ++i) {
+        const dirtOffset = index;
+        for (let i = 0; i < MapHelper.maxDirtGradients; ++i) {
             if (i < dirtCount) {
-                mapTileTypes[mapTileIndex] = mapTileValue;
-                ++mapTileIndex;
+                tileTypes[index] = indexLatest;
+                ++index;
             }
-            ++mapTileValue;
+            ++indexLatest;
         }
-        const rockOffset = mapTileIndex;
-        for (let i = 0; i < 256; ++i) {
+        const rockOffset = index;
+        for (let i = 0; i < MapHelper.maxRockGradients; ++i) {
             if (i < rockCount) {
-                mapTileTypes[mapTileIndex] = mapTileValue;
-                ++mapTileIndex;
+                tileTypes[index] = indexLatest;
+                ++index;
             }
-            ++mapTileValue;
+            ++indexLatest;
         }
         //const hellOffset = mapTileIndex;
-        mapTileTypes[mapTileIndex] = mapTileValue;
-        const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(new Uint8Array(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw")));
+        tileTypes[index] = indexLatest;
+        const deflatedFileIO = release < 93 ? fileIO : new BinaryReader(await global.decompressBuffer(fileIO.data.buffer.slice(fileIO.pos) as ArrayBuffer, "deflate-raw"));
         for (let y = 0; y < worldHeight; ++y) {
             for (let x = 0; x < worldWidth; ++x) {
                 const tileFlags = deflatedFileIO.ReadByte(); // VVWZYYYX
@@ -2143,29 +2461,29 @@ export class MapHelper {
                 // V - has repeated and repeated width
                 const tileColor = (tileFlags & 0b0000_0001) != 1 ? 0 : deflatedFileIO.ReadByte();
                 const tileGroup = (tileFlags & 0b0000_1110) >> 1;
-                let hasTileTypeIndex: boolean;
+                let hasTileType: boolean;
                 switch (tileGroup) {
                     case TileGroup.Empty:
-                        hasTileTypeIndex = false;
+                        hasTileType = false;
                         break;
                     case TileGroup.Tile:
                     case TileGroup.Wall:
                     case TileGroup.DirtRock:
-                        hasTileTypeIndex = true;
+                        hasTileType = true;
                         break;
                     case TileGroup.Water:
                     case TileGroup.Lava:
                     case TileGroup.Honey:
-                        hasTileTypeIndex = false;
+                        hasTileType = false;
                         break;
                     case TileGroup.Air:
-                        hasTileTypeIndex = false;
+                        hasTileType = false;
                         break;
                     default:
-                        hasTileTypeIndex = false;
+                        hasTileType = false;
                         break;
                 }
-                let tileTypeIndex = !hasTileTypeIndex ? 0 : ((tileFlags & 0b0001_0000) !== 0b0001_0000 ? deflatedFileIO.ReadByte() : deflatedFileIO.ReadUInt16());
+                let tileType = !hasTileType ? 0 : ((tileFlags & 0b0001_0000) !== 0b0001_0000 ? deflatedFileIO.ReadByte() : deflatedFileIO.ReadUInt16());
                 const light = (tileFlags & 0b0010_0000) !== 0b0010_0000 ? 255 : deflatedFileIO.ReadByte();
                 let repeated;
                 switch (((tileFlags & 0b1100_0000) >> 6)) {
@@ -2187,10 +2505,10 @@ export class MapHelper {
                         x += repeated;
                         continue;
                     case TileGroup.Tile:
-                        tileTypeIndex += tileOffset;
+                        tileType += tileOffset;
                         break;
                     case TileGroup.Wall:
-                        tileTypeIndex += wallOffset;
+                        tileType += wallOffset;
                         break;
                     case TileGroup.Water:
                     case TileGroup.Lava:
@@ -2199,287 +2517,172 @@ export class MapHelper {
                         if ((tileColor & 0x40) == 0x40) { // shimmer
                             whichLiquid = 3;
                         }
-                        tileTypeIndex += liquidOffset + whichLiquid;
+                        tileType += liquidOffset + whichLiquid;
                         break;
                     case TileGroup.Air:
-                        tileTypeIndex = airOffset;
+                        tileType = airOffset;
                         break;
                     case TileGroup.DirtRock:
                         if (worldMap.worldSurface === -1) {
                             worldMap.worldSurface = y;
-                            worldMap.drawAirTiles();
                         }
                         if (y < rockLayer) {
-                            tileTypeIndex += dirtOffset;
+                            tileType += dirtOffset;
                             break;
                         }
                         else {
-                            tileTypeIndex += rockOffset;
+                            tileType += rockOffset;
                             break;
                         }
                 }
 
-                let tile: MapTile = MapTile.Create(mapTileTypes[tileTypeIndex], light, tileColor >> 1 & 31, tileGroup);
-                worldMap.SetTile(x, y, repeated + 1, 1, tile);
+                const tileTypeLatest = tileTypes[tileType];
+                let tile: MapTile = MapTile.Create(tileTypeLatest, light, tileColor >> 1 & 31, tileGroup, MapHelper.idLookup[tileTypeLatest], MapHelper.optionLookup[tileTypeLatest]);
+                worldMap.SetTile(x, y, tile);
 
-                if (light == 255) {
-                    worldMap.SetTileLight(x, y, repeated + 1, 1, light);
-                    x += repeated;
-                    continue;
+                if (light === 255) {
+                    while (repeated > 0) {
+                        x++;
+                        worldMap.SetTile(x, y, tile);
+                        repeated--;
+                    }
                 } else {
-                    worldMap.SetTileLight(x, y, 1, 1, light);
-                }
-                for (; repeated > 0; --repeated) {
-                    ++x;
-                    let light2 = deflatedFileIO.ReadByte();
-                    worldMap.SetTileLight(x, y, 1, 1, light2);
+                    while (repeated > 0) {
+                        x++;
+                        tile = tile.WithLight(deflatedFileIO.ReadByte());
+                        worldMap.SetTile(x, y, tile);
+                        repeated--;
+                    }
                 }
             }
         }
-
         if (worldMap.worldSurface === -1) {
             worldMap.worldSurface = MapHelper.EstimateWorldSurface(worldHeight);
             worldMap.worldSurfaceEstimated = true;
-            worldMap.drawAirTiles();
         } else {
             worldMap.worldSurfaceEstimated = false;
         }
     }
-}
 
+    static WriteSchematic(bw: BinaryWriter, worldMap: WorldMap) {
+        bw.WriteString(worldMap.worldName!);
+        bw.WriteInt32(MapHelper.lastestRelease + 10000);
+        bw.WriteBitArray(MapHelper.tileFrameImportant);
+        bw.WriteInt32(worldMap.width);
+        bw.WriteInt32(worldMap.height);
 
-class MapTile {
-    public Type: number;
-    public Light: number;
-    private _extraData: number;
-    public Group: number;
+        this.WriteTiles(bw, worldMap); 
 
-    constructor(type: number, light: number, extraData: number, group: number) {
-        this.Type = type;
-        this.Light = light;
-        this._extraData = extraData;
-        this.Group = group;
+        // chests
+        bw.WriteInt16(0); // count 
+        bw.WriteInt16(0); // max chest contents
+
+        // signs
+        bw.WriteInt16(0); // count
+
+        // entities
+        bw.WriteInt32(0); // count
+
+        bw.WriteString(worldMap.worldName!);
+        bw.WriteInt32(MapHelper.lastestRelease);
+        bw.WriteInt32(worldMap.width);
+        bw.WriteInt32(worldMap.height);
     }
 
-    public get Color() {
-        return this._extraData & 127;
-    }
-    public set Color(value: number) {
-        this._extraData = (this._extraData & 128) | (value & 127);
-    }
+    static WriteTiles(bw: BinaryWriter, worldMap: WorldMap) {
+        for (let x = 0; x < worldMap.width; x++) {
+            for (let y = 0; y < worldMap.height; y++) {
+                const tile = worldMap.tile(x, y) || MapTile.ShadowDirt;
 
-    public WithLight(light: number) {
-        return new MapTile(this.Type, light, this._extraData | 128, this.Group);
-    }
+                const res = MapHelper.SerializeTileData(tile);
+                const {tileData} = res;
+                let {headerIndex, dataIndex} = res;
 
-    public static Create(type: number, light: number, color: number, group: number) {
-        return new MapTile(type, light, color | 128, group);
-    }
-}
-
-export class WorldMap {
-
-    public layers: HTMLCanvasElement[];
-    public canvasLighting        : HTMLCanvasElement;
-    public canvasTilesPainted    : HTMLCanvasElement;
-    public canvasTiles           : HTMLCanvasElement;
-    public canvasWallsPainted    : HTMLCanvasElement;
-    public canvasWalls           : HTMLCanvasElement;
-    public canvasLiquids         : HTMLCanvasElement;
-    public canvasAir             : HTMLCanvasElement;
-    public canvasUnexplored      : HTMLCanvasElement;
-    
-    public static layerNames = [
-        "Lighting",
-        "Tiles Painted",
-        "Tiles",
-        "Walls Painted",
-        "Walls",
-        "Liquids",
-        "Air",
-        "Unexplored/Explored"
-    ]
-
-    private _width: number;
-    private _height: number;
-    private airTiles: number[];
-    private airTileWidths: number[];
-
-    public canvasOutput: HTMLCanvasElement;
-
-    public worldName?: string;
-    public worldId?: number;
-    public release?: number;
-    public revision?: number;
-    public worldSurface?: number;
-    public worldSurfaceEstimated?: boolean;
-    public rockLayer?: number;
-
-    constructor(canvas: HTMLCanvasElement) {
-        this.canvasOutput = canvas;
-        const d = { "width": String(canvas.width), "height": String(canvas.height) };
-
-        this.layers = [];
-        this.layers[0] = this.canvasLighting        = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[1] = this.canvasTilesPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[2] = this.canvasTiles           = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[3] = this.canvasWallsPainted    = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[4] = this.canvasWalls           = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[5] = this.canvasLiquids         = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[6] = this.canvasAir             = global.createElementEX("canvas", d) as HTMLCanvasElement;
-        this.layers[7] = this.canvasUnexplored      = global.createElementEX("canvas", d) as HTMLCanvasElement;
-
-        this._width = canvas.width;
-        this._height = canvas.height;
-        this.airTiles = [];
-        this.airTileWidths = [];
-    }
-
-    public get width() {
-        return this._width;
-    }
-    public set width(val: number) {
-        this._width = val;
-        this.updateCanvasDimensions();
-    }
-
-    public get height() {
-        return this._height;
-    }
-    public set height(val: number) {
-        this._height = val;
-        this.updateCanvasDimensions();
-    }
-
-    public setDimensions(w: number, h: number) {
-        this._width = w;
-        this._height = h;
-        this.updateCanvasDimensions();
-    }
-
-    public updateCanvasDimensions() {
-        this.layers.forEach(canvas => {
-            canvas.width = this._width;
-            canvas.height = this._height;
-        })
-        this.canvasOutput.width = this._width;
-        this.canvasOutput.height = this._height;
-    }
-
-    public render(layersActive: boolean[]) {
-        const ctxOutput = this.canvasOutput.getContext("2d")!;
-        ctxOutput.clearRect(0, 0, this._width, this._height);
-
-        for (let i = this.layers.length - 1; i >= 0; i--) {
-            if (layersActive[i]) {
-                this.drawCanvas(ctxOutput, this.layers[i]);
-            }
-        }
-    }
-
-    private drawCanvas(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
-        try {
-            ctx.drawImage(canvas, 0, 0);
-        } catch (e: any) {
-            if (e.message !== "CanvasRenderingContext2D.drawImage: Passed-in canvas is empty") {
-                throw e;
-            }
-        }
-    }
-
-    public drawAirTiles() {
-        const ctx = this.canvasAir.getContext("2d")!;
-        let y = -1;
-        let color: Color;
-        for (let i = 0; i < this.airTiles.length; i++) {
-            let n = this.airTiles[i];
-            let w = this.airTileWidths[i];
-            let y2 = Math.floor(n / this._width);
-            if (y !== y2) {
-                y = y2;
-                color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
-                ctx.fillStyle = color.toString();
-            }
-            ctx.fillRect(n % this._width, y, w, 1);
-        }
-        this.airTiles = [];
-        this.airTileWidths = [];
-    }
-
-    public SetTile(x: number, y: number, width: number, height: number, tile: MapTile) {
-        let ctx: CanvasRenderingContext2D;
-        let ctx2: CanvasRenderingContext2D;
-        let color: Color;
-        switch (tile.Group) {
-            case TileGroup.Air:
-                if (this.worldSurface === -1) {
-                    this.airTiles.push(y * this._width + x);
-                    this.airTileWidths.push(width);
-                } else {
-                    color = MapHelper.GetMapTileAirColor(y, this.worldSurface!);
-                    ctx = this.canvasAir.getContext("2d")!;
-                    this.drawTile(x, y, width, height, ctx, color);
+                let header1 = tileData[headerIndex];
+                
+                let rle = 0;
+                let y2 = y + 1;
+                while (y2 < worldMap.height && tile.EqualsAfterExport(worldMap.tile(x, y2) || MapTile.ShadowDirt) && tile.ID !== 520 && tile.ID !== 423) {
+                    rle++;
+                    y2++;
                 }
-                break;
-            case TileGroup.DirtRock:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasAir.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                break;
-            case TileGroup.Tile:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasTiles.getContext("2d")!;
-                ctx2 = this.canvasTilesPainted.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                this.drawPaintedTile(x, y, width, height, ctx2, color, tile);
-                break;
-            case TileGroup.Wall:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasWalls.getContext("2d")!;
-                ctx2 = this.canvasWallsPainted.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                this.drawPaintedTile(x, y, width, height, ctx2, color, tile);
-                break;
-            case TileGroup.Water:
-            case TileGroup.Lava:
-            case TileGroup.Honey:
-                color = MapHelper.GetMapTileXnaColor(tile);
-                ctx = this.canvasLiquids.getContext("2d")!;
-                this.drawTile(x, y, width, height, ctx, color);
-                break;
+                y += rle;
+
+                if (rle > 0) {
+                    tileData[dataIndex++] = rle & 0xFF;
+                    if (rle <= 255) {
+                        header1 |= 0b0100_0000;
+                    } else {
+                        tileData[dataIndex++] = rle >> 8;
+                        header1 |= 0b1000_0000;
+                    }
+                    tileData[headerIndex] = header1;
+                }
+
+                bw.WriteUint8Array(tileData, headerIndex, dataIndex - headerIndex);
+            }
         }
     }
 
-    private drawTile(x: number, y: number, width: number, height: number, ctx: CanvasRenderingContext2D, color: Color) {
-        ctx.fillStyle = color.toString();
-        ctx.fillRect(x, y, width, height);
-    }
+    static SerializeTileData(tile: MapTile) {
+        const tileData = new Uint8Array(16);
+        let dataIndex = 4;
 
-    private drawPaintedTile(x: number, y: number, width: number, height: number, ctx2: CanvasRenderingContext2D, color: Color, tile: MapTile) {
-        if (tile.Color > 0) {
-            const colorPainted = color.copy();
-            MapHelper.MapColor(tile.Type, colorPainted, tile.Color);
-            ctx2!.fillStyle = colorPainted.toString();
-            ctx2!.fillRect(x, y, width, height);
+        let header3 = 0;
+        let header2 = 0;
+        let header1 = 0;
+        if (tile.Group === TileGroup.Tile) {
+            header1 |= 0b0000_0010;
+            tileData[dataIndex++] = tile.ID! & 0xFF;
+            if (tile.ID! > 255) {
+                header1 |= 0b0010_0000;
+                tileData[dataIndex++] = tile.ID! >> 8;
+            }
+
+            if (MapHelper.tileFrameImportant[tile.ID!]) {
+                const {frameX, frameY} = MapHelper.getFrameFromBaseOption(tile.ID!, tile.Option!);
+                tileData[dataIndex++] = (frameX & 0xFF); // low byte
+                tileData[dataIndex++] = ((frameX & 0xFF00) >> 8); // high byte
+                tileData[dataIndex++] = (frameY & 0xFF); // low byte
+                tileData[dataIndex++] = ((frameY & 0xFF00) >> 8); // high byte
+            }
+
+            if (tile.Color !== 0) {
+                header3 |= 0b0000_1000;
+                tileData[dataIndex++] = tile.Color;
+            }
+        } else if (tile.Group === TileGroup.Wall) {
+            header1 |= 0b0000_0100;
+            tileData[dataIndex++] = tile.ID! & 0xFF;
+            
+            if (tile.Color !== 0) {
+                header3 |= 0b0001_0000;
+                tileData[dataIndex++] = tile.Color;
+            }
+        } else if (tile.Group >= TileGroup.Water && tile.Group <= TileGroup.Honey) {
+            if (tile.Group === TileGroup.Water) {
+                header1 |= 0b0000_1000;
+                if (tile.ID === 3) { // shimmer
+                    header3 |= 0b1000_0000;
+                }
+            } else if (tile.Group === TileGroup.Lava) {
+                header1 |= 0b0001_0000;
+            } else { // honey
+                header1 |= 0b0001_1000;
+            }
+            tileData[dataIndex++] = 255;
         }
-    }
 
-    public SetTileLight(x: number, y: number, width: number, height: number, light: number) {
-        const ctx3 = this.canvasLighting.getContext("2d")!;
-        ctx3.globalAlpha = 1 - light / 255;
-        ctx3.fillRect(x, y, width, height);
-    }
-
-    public DrawUnexploredLayer() {
-        const ctx = this.canvasUnexplored.getContext("2d")!;
-        ctx.fillStyle = "rgb(0 0 0)";
-        ctx.fillRect(0, 0, this._width, this._height);
-        ctx.globalCompositeOperation = "destination-out";
-
-        for (let i = this.layers.length - 2; i >= 1; i--) {
-            this.drawCanvas(ctx, this.layers[i]);
+        let headerIndex = 3;
+        if (header3 !== 0) {
+            header2 |= 0b0000_0001;
+            tileData[headerIndex--] = header3;
         }
-
-        ctx.globalCompositeOperation = "source-over";
+        if (header2 !== 0) {
+            header1 |= 0b0000_0001;
+            tileData[headerIndex--] = header2;
+        }
+        tileData[headerIndex] = header1;
+        return {tileData, headerIndex, dataIndex};
     }
 }
