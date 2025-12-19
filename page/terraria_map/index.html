@@ -22,7 +22,7 @@
 </head>
 
 <body>
-    <div class="terraria-map-flexbox">
+    <div id="grid">
         <div class="terraria-map-manager">
             <div>
                 <a href="/">&lt-- go back</a>
@@ -59,9 +59,7 @@
                 <h2 id="worldName"></h2>
                 <div id="worldInfo"></div>
             </div>
-            <div class="section" id="tileInfo" hidden></div>
-
-            <p>Updated as of v1.4.4.9</p>
+            <div class="section terraria-map-tileinfo" id="tileInfo" hidden></div>
         </div>
 
         <div class="terraria-map-area" id="mapArea" hidden>
@@ -73,6 +71,10 @@
             <div class="terraria-map-container" id="mapContainer">
                 <canvas class="terraria-map" width="0px" height="0px" id="canvas"></canvas>
             </div>
+        </div>
+
+        <div class="terraria-map-footer">
+            <p>Updated as of v1.4.4.9</p>
         </div>
     </div>
 

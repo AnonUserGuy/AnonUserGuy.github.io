@@ -140,19 +140,20 @@ abbr {
 }
 
 
-.terraria-map-flexbox {
-    display: flex;
+.terraria-map-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
     gap: 10px;
 }
 
-.terraria-map-manager {
-    flex: 1;
+.terraria-map-manager,
+.terraria-map-footer {
     min-width: 0;
 }
 
 .terraria-map-area {
     position: relative;
-    flex: 2;
 }
 
 .terraria-map-buttons {
@@ -163,7 +164,7 @@ abbr {
 
 .terraria-map-container {
     overflow: scroll;
-    width: calc(66vw - 8px);
+    width: calc(100vw - 32px);
     height: calc(100vh - 16px);
 }
 
@@ -176,13 +177,38 @@ abbr {
     background-color: grey;
 }
 
-@media (max-width: 700px) {
-    .terraria-map-flexbox {
-        flex-direction: column;
+.terraria-map-tileinfo {
+    min-height: 3em;
+}
+
+
+@media (min-width: 900px) {
+    .terraria-map-grid {
+        grid-template-columns: 1fr 2fr;
+        grid-template-rows: 1fr 1fr;    
+        height: calc(100vh - 16px);
+    }
+
+    .terraria-map-manager {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .terraria-map-area {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        height: calc(100vh - 16px);
+        position: sticky;
+        top: 0px;
+    }
+
+    .terraria-map-footer {
+        grid-column: 1;
+        grid-row: 2;
     }
 
     .terraria-map-container {
-        width: calc(100vw - 32px);
+        width: calc(66vw - 8px);
     }
 }
 

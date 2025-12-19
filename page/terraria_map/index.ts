@@ -2,6 +2,7 @@ import * as global from "@js/global.js";
 import WorldMapCanvas from "@js/lib/terraria/terraria-world-map-canvas.js";
 import MapHelper from "@js/lib/terraria/terraria-map-helper.js";
 
+const grid = document.getElementById("grid") as HTMLDivElement;
 const mapArea = document.getElementById("mapArea") as HTMLDivElement;
 const mapContainer = document.getElementById("mapContainer") as HTMLDivElement;
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
@@ -51,6 +52,7 @@ const map = new WorldMapCanvas(canvas);
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
         global.loading(true);
+        grid.classList.add("terraria-map-grid");
         mapArea.hidden = false;
         error.hidden = true;
         info.hidden = true;
