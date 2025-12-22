@@ -1,4 +1,4 @@
-import Color from "./net-xna-color.js";
+import Color from "./net/xna-color.js";
 import MapHelper from "./terraria-map-helper.js";
 import MapTile, { TileGroup } from "./terraria-map-tile.js";
 import WorldMap from "./terraria-world-map.js";

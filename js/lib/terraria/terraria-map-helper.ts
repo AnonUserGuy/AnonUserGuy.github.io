@@ -1,10 +1,12 @@
 import * as global from "@js/global.js"
-import Color from "./net-xna-color.js";
-import BinaryReader from "./net-binary-reader.js";
-import BinaryWriter from "./net-binary-writer.js";
+import Color from "./net/xna-color.js";
+import BinaryReader from "./net/binary-reader.js";
+import BinaryWriter from "./net/binary-writer.js";
 import MapTile, { TileGroup } from "./terraria-map-tile.js";
 import WorldMap from "./terraria-world-map.js";
 import TileID from "./id/tile-ids.js";
+import WallID from "./id/wall-ids.js";
+import TileData from "./data/tile-data.js";
 
 enum FileType {
     None,
@@ -97,8 +99,6 @@ class OldMapHelper {
 export default class MapHelper {
     public static lastestRelease = 279;
 
-    public static tileCount = 693;
-    public static wallCount = 347;
     public static maxLiquidTypes = 4;
     private static maxSkyGradients = 256;
     private static maxDirtGradients = 256;
@@ -120,69 +120,12 @@ export default class MapHelper {
     public static tileOptionCounts: number[];
     public static wallOptionCounts: number[];
 
-    public static tileFrameImportant: boolean[];
     public static idLookup: number[];
     public static optionLookup: number[];
 
     static {
-        const tileFrameImportantIndexes = [
-            TileID.Benches,
-            TileID.Platforms,
-            TileID.Chairs,
-            TileID.LilyPad,
-            TileID.Cattail,
-            TileID.Torches,
-            TileID.SoulBottles,
-            TileID.Containers,
-            TileID.FakeContainers,
-            TileID.Containers2,
-            TileID.FakeContainers2,
-            TileID.GolfTrophies,
-            TileID.Pots,
-            TileID.PotsEcho,
-            TileID.Sunflower,
-            TileID.ShadowOrbs,
-            TileID.DemonAltar,
-            TileID.Traps,
-            TileID.ImmatureHerbs,
-            TileID.MatureHerbs,
-            TileID.BloomingHerbs,
-            TileID.PotsSuspended,
-            TileID.Statues,
-            TileID.AdamantiteForge,
-            TileID.MythrilAnvil,
-            TileID.Stalactite,
-            TileID.ExposedGems,
-            TileID.LongMoss,
-            TileID.SmallPiles1x1Echo,
-            TileID.SmallPiles2x1Echo,
-            TileID.SmallPiles, 
-            TileID.LargePiles,
-            TileID.LargePilesEcho,
-            TileID.LargePiles2,
-            TileID.LargePiles2Echo,
-            TileID.DyePlants,
-            TileID.Crystals,
-            TileID.Painting3X3,
-            TileID.Painting6X4,
-            TileID.GemLocks,
-            TileID.PartyPresent,
-            TileID.SillyBalloonTile,
-            TileID.LogicGateLamp,
-            TileID.WeightedPressurePlate,
-            TileID.LogicGate,
-            TileID.LogicSensor,
-            TileID.GolfCupFlag,
-            TileID.PottedPlants2,
-            TileID.TeleportationPylon
-        ]
-        this.tileFrameImportant = Array(MapHelper.tileCount);
-        for (let i = 0; i < tileFrameImportantIndexes.length; i++) {
-            this.tileFrameImportant[tileFrameImportantIndexes[i]] = true;
-        }
-
-        const tileColors: Color[][] = Array(MapHelper.tileCount);
-        for (let i = 0; i < MapHelper.tileCount; i++) {
+        const tileColors: Color[][] = Array(TileID.Count);
+        for (let i = 0; i < TileID.Count; i++) {
             tileColors[i] = Array(12);
         }
         tileColors[656][0] = new Color(21, 124, 212);
@@ -1163,8 +1106,8 @@ export default class MapHelper {
                 new Color(254, 194, 20),
                 new Color(161, 127, 255)
             ];
-        const wallColors: Color[][] = Array(MapHelper.wallCount);
-        for (let num5 = 0; num5 < MapHelper.wallCount; num5++) {
+        const wallColors: Color[][] = Array(WallID.Count);
+        for (let num5 = 0; num5 < WallID.Count; num5++) {
             wallColors[num5] = Array(2);
         }
         wallColors[158][0] = new Color(107, 49, 154);
@@ -1544,8 +1487,8 @@ export default class MapHelper {
         }
         let color10 = new Color(50, 44, 38);
         let colorCount = 0;
-        MapHelper.tileOptionCounts = Array(MapHelper.tileCount);
-        for (let num16 = 0; num16 < MapHelper.tileCount; num16++) {
+        MapHelper.tileOptionCounts = Array(TileID.Count);
+        for (let num16 = 0; num16 < TileID.Count; num16++) {
             let array8 = tileColors[num16];
             let num17;
             for (num17 = 0; num17 < 12 && !(!array8[num17] || (array8[num17] === Color.Transparent)); num17++) {
@@ -1553,8 +1496,8 @@ export default class MapHelper {
             MapHelper.tileOptionCounts[num16] = num17;
             colorCount += num17;
         }
-        MapHelper.wallOptionCounts = Array(MapHelper.wallCount);
-        for (let num18 = 0; num18 < MapHelper.wallCount; num18++) {
+        MapHelper.wallOptionCounts = Array(WallID.Count);
+        for (let num18 = 0; num18 < WallID.Count; num18++) {
             let array9 = wallColors[num18];
             let num19;
             for (num19 = 0; num19 < 2 && !(!array9[num19] || (array9[num19] === Color.Transparent)); num19++) {
@@ -1566,10 +1509,10 @@ export default class MapHelper {
         MapHelper.colorLookup = Array(colorCount);
         MapHelper.colorLookup[0] = Color.Transparent;
         let lookupIndex = (MapHelper.tilePosition = 1);
-        MapHelper.tileLookup = Array(MapHelper.tileCount);
-        MapHelper.idLookup = Array(MapHelper.tileCount);
-        MapHelper.optionLookup = Array(MapHelper.tileCount);
-        for (let i = 0; i < MapHelper.tileCount; i++) {
+        MapHelper.tileLookup = Array(TileID.Count);
+        MapHelper.idLookup = Array(TileID.Count);
+        MapHelper.optionLookup = Array(TileID.Count);
+        for (let i = 0; i < TileID.Count; i++) {
             if (MapHelper.tileOptionCounts[i] > 0) {
                 let _ = tileColors[i];
                 MapHelper.tileLookup[i] = lookupIndex;
@@ -1585,9 +1528,9 @@ export default class MapHelper {
             }
         }
         MapHelper.wallPosition = lookupIndex;
-        MapHelper.wallLookup = Array(MapHelper.wallCount);
+        MapHelper.wallLookup = Array(WallID.Count);
         MapHelper.wallRangeStart = lookupIndex;
-        for (let i = 0; i < MapHelper.wallCount; i++) {
+        for (let i = 0; i < WallID.Count; i++) {
             if (MapHelper.wallOptionCounts[i] > 0) {
                 let _ = wallColors[i];
                 MapHelper.wallLookup[i] = lookupIndex;
@@ -1893,9 +1836,7 @@ export default class MapHelper {
                 tileCache.frameY = baseOption * 108;
                 break;
             case TileID.Sunflower:
-                if (baseOption === 1) {
-                    tileCache.frameY = 34;
-                }
+                // just the head of the flower
                 break;
             case TileID.ShadowOrbs:
                 if (baseOption === 1) {
@@ -1965,6 +1906,7 @@ export default class MapHelper {
                 tileCache.frameX = baseOption * 22;
                 break;
             case TileID.SmallPiles1x1Echo:
+            case TileID.SmallPiles: // can also do one below but not determinable from just baseOption
                 {
                     let n: number;
                     switch (baseOption) {
@@ -1992,7 +1934,6 @@ export default class MapHelper {
                     break;
                 }
             case TileID.SmallPiles2x1Echo:
-            case TileID.SmallPiles: // can also do one above but not determinable from just baseOption
                 {
                     let n: number;
                     switch (baseOption) {
@@ -2384,7 +2325,7 @@ export default class MapHelper {
         let indexLatest = 1;
         let index = 1;
         const tileOffset = index;
-        for (let i = 0; i < MapHelper.tileCount; ++i) {
+        for (let i = 0; i < TileID.Count; ++i) {
             if (i < tileCount) {
                 const tileOptions = tileOptionCounts[i];
                 const tileOptionsLatest = MapHelper.tileOptionCounts[i];
@@ -2401,7 +2342,7 @@ export default class MapHelper {
             }
         }
         const wallOffset = index;
-        for (let i = 0; i < MapHelper.wallCount; ++i) {
+        for (let i = 0; i < WallID.Count; ++i) {
             if (i < wallCount) {
                 const wallOptions = wallOptionCounts[i];
                 const wallOptionsLatest = MapHelper.wallOptionCounts[i];
@@ -2567,11 +2508,11 @@ export default class MapHelper {
     static WriteSchematic(bw: BinaryWriter, worldMap: WorldMap) {
         bw.WriteString(worldMap.worldName!);
         bw.WriteInt32(MapHelper.lastestRelease + 10000);
-        bw.WriteBitArray(MapHelper.tileFrameImportant);
+        bw.WriteBitArray(TileData.frameImportant);
         bw.WriteInt32(worldMap.width);
         bw.WriteInt32(worldMap.height);
 
-        this.WriteTiles(bw, worldMap); 
+        this.WriteTiles(bw, worldMap);
 
         // chests
         bw.WriteInt16(0); // count 
@@ -2590,21 +2531,41 @@ export default class MapHelper {
     }
 
     static WriteTiles(bw: BinaryWriter, worldMap: WorldMap) {
+        const u: number[] = [];
+        const v: number[] = [];
+        let lastWall = MapTile.anyWall;
+
         for (let x = 0; x < worldMap.width; x++) {
             for (let y = 0; y < worldMap.height; y++) {
-                const tile = worldMap.tile(x, y) || MapTile.ShadowDirt;
+                const i = y * worldMap.width + x;
+                const tile = worldMap.tiles[i] || MapTile.ShadowDirt;
+                let needsWall = false;
+                if (tile !== MapTile.ShadowDirt) {
+                    if (tile.Group === TileGroup.Tile && TileData.frameImportant[tile.ID!]) {
+                        MapHelper.getTileUV(worldMap, tile, x, y, u, v);
+                        if (tile.ID! === TileID.Torches) {
+                            needsWall = MapHelper.needsWall(worldMap, x, y);
+                        }
+                    } else if (tile.Group === TileGroup.Wall) {
+                        lastWall = tile;
+                    }
+                }
 
-                const res = MapHelper.SerializeTileData(tile);
-                const {tileData} = res;
-                let {headerIndex, dataIndex} = res;
+                const res = MapHelper.SerializeTileData(tile, u[i], v[i], needsWall, lastWall);
+                const { tileData } = res;
+                let { headerIndex, dataIndex } = res;
 
                 let header1 = tileData[headerIndex];
-                
+
                 let rle = 0;
-                let y2 = y + 1;
-                while (y2 < worldMap.height && tile.EqualsAfterExport(worldMap.tile(x, y2) || MapTile.ShadowDirt) && tile.ID !== 520 && tile.ID !== 423) {
-                    rle++;
-                    y2++;
+                if (tile.ID !== 520 && tile.ID !== 423) {
+                    let y2 = y + 1;
+                    let i2 = y2 * worldMap.width + x;
+                    while (y2 < worldMap.height && tile.EqualsAfterExport(worldMap.tile(x, y2) || MapTile.ShadowDirt) && (tile.Group !== TileGroup.Tile || !TileData.frameImportant[tile.ID!] || (u[i] === u[y2 * worldMap.width + x] && v[i] === v[y2 * worldMap.width + x]))) {
+                        rle++;
+                        y2++;
+                        i2 = y2 * worldMap.width + x;
+                    }
                 }
                 y += rle;
 
@@ -2624,7 +2585,7 @@ export default class MapHelper {
         }
     }
 
-    static SerializeTileData(tile: MapTile) {
+    static SerializeTileData(tile: MapTile, u: number | undefined, v: number | undefined, needsWall: boolean, wall: MapTile) {
         const tileData = new Uint8Array(16);
         let dataIndex = 4;
 
@@ -2639,22 +2600,31 @@ export default class MapHelper {
                 tileData[dataIndex++] = tile.ID! >> 8;
             }
 
-            if (MapHelper.tileFrameImportant[tile.ID!]) {
-                const {frameX, frameY} = MapHelper.getFrameFromBaseOption(tile.ID!, tile.Option!);
-                tileData[dataIndex++] = (frameX & 0xFF); // low byte
-                tileData[dataIndex++] = ((frameX & 0xFF00) >> 8); // high byte
-                tileData[dataIndex++] = (frameY & 0xFF); // low byte
-                tileData[dataIndex++] = ((frameY & 0xFF00) >> 8); // high byte
+            if (TileData.frameImportant[tile.ID!]) {
+                tileData[dataIndex++] = (u! & 0xFF); // low byte
+                tileData[dataIndex++] = ((u! & 0xFF00) >> 8); // high byte
+                tileData[dataIndex++] = (v! & 0xFF); // low byte
+                tileData[dataIndex++] = ((v! & 0xFF00) >> 8); // high byte
             }
 
             if (tile.Color !== 0) {
                 header3 |= 0b0000_1000;
                 tileData[dataIndex++] = tile.Color;
             }
+
+            if (needsWall) {
+                header1 |= 0b0000_0100;
+                tileData[dataIndex++] = wall.ID! & 0xFF;
+
+                if (wall.Color !== 0) {
+                    header3 |= 0b0001_0000;
+                    tileData[dataIndex++] = wall.Color;
+                }
+            }
         } else if (tile.Group === TileGroup.Wall) {
             header1 |= 0b0000_0100;
             tileData[dataIndex++] = tile.ID! & 0xFF;
-            
+
             if (tile.Color !== 0) {
                 header3 |= 0b0001_0000;
                 tileData[dataIndex++] = tile.Color;
@@ -2683,6 +2653,278 @@ export default class MapHelper {
             tileData[headerIndex--] = header2;
         }
         tileData[headerIndex] = header1;
-        return {tileData, headerIndex, dataIndex};
+        return { tileData, headerIndex, dataIndex };
+    }
+
+    static getTileUV(worldMap: WorldMap, tile: MapTile, x: number, y: number, u: number[], v: number[]) {
+        const i = y * worldMap.width + x;
+        if (TileData.tree[tile.ID!]) {
+            MapHelper.resolveTree(worldMap, x, y, u, v);
+        } else if (tile.ID! === TileID.Stalactite) {
+            MapHelper.resolveStalactite(worldMap, x, y, v);
+        } else if (tile.ID! === TileID.PlantDetritus) {
+            MapHelper.resolvePlantDetritus(worldMap, x, y, u, v);
+        } else {
+            MapHelper.resolveWidth(worldMap, x, y, u);
+            MapHelper.resolveHeight(worldMap, x, y, v);
+        }
+        const { frameX, frameY } = MapHelper.getFrameFromBaseOption(tile.ID!, tile.Option!);
+        u[i] = (u[i] || 0) + frameX;
+        v[i] = (v[i] || 0) + frameY;
+    }
+
+    static resolveWidth(worldMap: WorldMap, x: number, y: number, u: number[]) {
+        const i = y * worldMap.width + x;
+        const tile = worldMap.tiles[i];
+        if (tile.ID! in TileData.width) {
+            if (x === 0) {
+                u[i] = 0;
+            } else {
+                const i2 = y * worldMap.width + x - 1;
+                const tileR = worldMap.tiles[i2];
+                if (tileR && tileR.ID! === tile.ID) {
+                    u[i] = (u[i2] + 18) % (18 * TileData.width[tile.ID]);
+                } else {
+                    u[i] = 0;
+                }
+            }
+        }
+    }
+
+    static resolveHeight(worldMap: WorldMap, x: number, y: number, v: number[]) {
+        const i = y * worldMap.width + x;
+        const tile = worldMap.tiles[i];
+        if (tile.ID! in TileData.height) {
+            if (y === 0) {
+                v[i] = 0;
+            } else {
+                const i2 = (y - 1) * worldMap.width + x;
+                const tileU = worldMap.tiles[i2];
+                if (tileU && tileU.ID! === tile.ID) {
+                    v[i] = (v[i2] + 18) % (18 * TileData.height[tile.ID]);
+                } else {
+                    v[i] = 0;
+                }
+            }
+        }
+    }
+
+    static resolveTree(worldMap: WorldMap, x: number, y: number, u: number[], v: number[]) {
+        let i = y * worldMap.width + x;
+        if (u[i] !== undefined) {
+            return;
+        }
+
+        // find top of tree
+        let tolerance = 2;
+        while (tolerance > 0 && y > 0) {
+            if (MapHelper.treeAt(worldMap, x, y - 1)) {
+                y--;
+                tolerance = 2;
+                continue;
+            }
+            if (x > 0 && MapHelper.treeAt(worldMap, x - 1, y)) {
+                x--;
+                tolerance--;
+                continue;
+            }
+            if (x < worldMap.width - 1 && MapHelper.treeAt(worldMap, x + 1, y)) {
+                x++;
+                tolerance--;
+                continue;
+            }
+            break;
+        }
+
+        i = y * worldMap.width + x;
+        u[i] = TileData.treeBaseTop[0];
+        v[i] = TileData.treeBaseTop[1];
+
+        // descend tree
+        y++;
+        for (; MapHelper.treeAt(worldMap, x, y + 1); y++) {
+            i = y * worldMap.width + x;
+            let left = false;
+            let right = false;
+            if (x > 0 && MapHelper.treeAt(worldMap, x - 1, y)) {
+                left = true;
+                const i2 = i - 1;
+                if (y % 2 === 0) {
+                    u[i2] = TileData.treeBranchLeftLeafy[0];
+                    v[i2] = TileData.treeBranchLeftLeafy[1];
+                } else {
+                    u[i2] = TileData.treeBranchLeft[0];
+                    v[i2] = TileData.treeBranchLeft[1];
+                }
+            }
+            if (x < worldMap.width - 1 && MapHelper.treeAt(worldMap, x + 1, y)) {
+                right = true;
+                const i2 = i + 1;
+                if (y % 2 === 0) {
+                    u[i2] = TileData.treeBranchRightLeafy[0];
+                    v[i2] = TileData.treeBranchRightLeafy[1];
+                } else {
+                    u[i2] = TileData.treeBranchRight[0];
+                    v[i2] = TileData.treeBranchRight[1];
+                }
+            }
+            if (left && right) {
+                u[i] = TileData.treeBaseBranchBoth[0];
+                v[i] = TileData.treeBaseBranchBoth[1];
+            } else if (left) {
+                u[i] = TileData.treeBaseBranchLeft[0];
+                v[i] = TileData.treeBaseBranchLeft[1];
+            } else if (right) {
+                u[i] = TileData.treeBaseBranchRight[0];
+                v[i] = TileData.treeBaseBranchRight[1];
+            } else {
+                u[i] = TileData.treeBase[0];
+                v[i] = TileData.treeBase[1];
+            }
+        }
+
+        if (MapHelper.treeAt(worldMap, x, y)) {
+            i = y * worldMap.width + x;
+            let left = false;
+            let right = false;
+            if (x > 0 && MapHelper.treeAt(worldMap, x - 1, y)) {
+                left = true;
+                const i2 = i - 1;
+                u[i2] = TileData.treeTrunkLeft[0];
+                v[i2] = TileData.treeTrunkLeft[1];
+            }
+            if (x < worldMap.width - 1 && MapHelper.treeAt(worldMap, x + 1, y)) {
+                right = true;
+                const i2 = i + 1;
+                u[i2] = TileData.treeTrunkRight[0];
+                v[i2] = TileData.treeTrunkRight[1];
+            }
+            if (left && right) {
+                u[i] = TileData.treeTrunkBoth[0];
+                v[i] = TileData.treeTrunkBoth[1];
+            } else if (left) {
+                u[i] = TileData.treeBaseTrunkLeft[0];
+                v[i] = TileData.treeBaseTrunkLeft[1];
+            } else if (right) {
+                u[i] = TileData.treeBaseTrunkRight[0];
+                v[i] = TileData.treeBaseTrunkRight[1];
+            } else {
+                u[i] = TileData.treeBase[0];
+                v[i] = TileData.treeBase[1];
+            }
+        }
+    }
+
+    static treeAt(worldMap: WorldMap, x: number, y: number) {
+        const tile = worldMap.tile(x, y);
+        return tile && tile.Group === TileGroup.Tile && TileData.tree[tile.ID!];
+    }
+
+    static resolveStalactite(worldMap: WorldMap, x: number, y: number, v: number[]) {
+        let i = y * worldMap.width + x;
+        if (v[i] !== undefined) {
+            return;
+        }
+
+        if (y > 0 && this.solidAt(worldMap, x, y - 1)) {
+            // ceiling
+            if (y < worldMap.height - 1 && this.stalactiteAt(worldMap, x, y + 1)) {
+                // 2 tall
+                v[i] = 0;
+                v[i + worldMap.width] = 18;
+            } else {
+                // 1 tall
+                v[i] = 72;
+            }
+        } else {
+            // floor
+            if (y < worldMap.height - 1 && this.stalactiteAt(worldMap, x, y + 1)) {
+                // 2 tall
+                v[i] = 36;
+                v[i + worldMap.width] = 54;
+            } else {
+                // 1 tall
+                v[i] = 90;
+            }
+        }
+
+    }
+
+    static stalactiteAt(worldMap: WorldMap, x: number, y: number) {
+        const tile = worldMap.tile(x, y);
+        return tile && tile.Group === TileGroup.Tile && tile.ID === TileID.Stalactite;
+    }
+
+    static resolvePlantDetritus(worldMap: WorldMap, x: number, y: number, u: number[], v: number[]) {
+        let i = y * worldMap.width + x;
+        if (v[i] !== undefined) {
+            return;
+        }
+
+        let width = 1;
+        while (x < worldMap.width && this.plantDetritusAt(worldMap, x + width, y)) {
+            width++;
+        }
+        while (width > 4) {
+            MapHelper.plantDetritus3(worldMap, x, y, u, v);
+            y += 3;
+            width -= 3;
+        } 
+        if (width === 4) {
+            MapHelper.plantDetritus2(worldMap, x, y, u, v);
+            y += 2;
+            MapHelper.plantDetritus2(worldMap, x, y, u, v);
+            y += 2;
+        } else if (width === 3) {
+            MapHelper.plantDetritus3(worldMap, x, y, u, v);
+            y += 3;
+        } else if (width === 2) {
+            MapHelper.plantDetritus2(worldMap, x, y, u, v);
+            y += 2;
+        }
+    }
+
+    static plantDetritus3(worldMap: WorldMap, x: number, y: number, u: number[], v: number[]) {
+        let i = y * worldMap.width + x;
+        let i2 = (y + 1) * worldMap.width + x;
+        u[i] = 0;
+        v[i] = 0;
+        u[i2] = 0;
+        v[i2] = 18;
+        u[i + 1] = 18;
+        v[i + 1] = 0;
+        u[i2 + 1] = 18;
+        v[i2 + 1] = 18;
+        u[i + 2] = 36;
+        v[i + 2] = 0;
+        u[i2 + 2] = 36;
+        v[i2 + 2] = 18;
+    }
+
+    static plantDetritus2(worldMap: WorldMap, x: number, y: number, u: number[], v: number[]) {
+        let i = y * worldMap.width + x;
+        let i2 = (y + 1) * worldMap.width + x;
+        u[i] = 0;
+        v[i] = 36;
+        u[i2] = 0;
+        v[i2] = 54;
+        u[i + 1] = 18;
+        v[i + 1] = 36;
+        u[i2 + 1] = 18;
+        v[i2 + 1] = 54;
+    }
+
+    static plantDetritusAt(worldMap: WorldMap, x: number, y: number) {
+        const tile = worldMap.tile(x, y);
+        return tile && tile.Group === TileGroup.Tile && tile.ID === TileID.PlantDetritus;
+    }
+
+    static solidAt(worldMap: WorldMap, x: number, y: number) {
+        const tile = worldMap.tile(x, y);
+        return tile && tile.Group === TileGroup.Tile && TileData.solid[tile.ID!];
+    }
+
+    static needsWall(worldMap: WorldMap, x: number, y: number) {
+        return !this.solidAt(worldMap, x, y + 1) && !this.solidAt(worldMap, x - 1, y) && !this.solidAt(worldMap, x + 1, y);
     }
 }

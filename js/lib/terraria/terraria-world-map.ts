@@ -1,7 +1,7 @@
 import MapTile, { TileGroup } from "./terraria-map-tile.js";
 import MapHelper from "./terraria-map-helper.js";
-import BinaryReader from "./net-binary-reader.js";
-import BinaryWriter from "./net-binary-writer.js";
+import BinaryReader from "./net/binary-reader.js";
+import BinaryWriter from "./net/binary-writer.js";
 
 export default class WorldMap {
 

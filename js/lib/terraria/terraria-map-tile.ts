@@ -23,6 +23,7 @@ export default class MapTile {
 
     public static Air = MapTile.Create(0, 255, 0, TileGroup.Air);
     public static ShadowDirt = MapTile.Create(1, 0, PaintID.ShadowPaint, TileGroup.Tile, TileID.Dirt, 0);
+    public static anyWall = MapTile.Create(1, 0, 0, TileGroup.Wall, WallID.DirtUnsafe, 0);
 
     constructor(type: number, light: number, extraData: number, group: number, id: number | undefined, option: number | undefined) {
         this.Type = type;

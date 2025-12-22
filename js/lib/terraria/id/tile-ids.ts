@@ -1384,6 +1384,8 @@ enum TileID {
 	VioletMossBlock = 691,
 
 	RainbowMossBlock = 692,
+
+	Count = 693,
 }
 
 export default TileID;

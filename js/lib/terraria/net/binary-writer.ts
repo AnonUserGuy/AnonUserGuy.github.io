@@ -1,6 +1,7 @@
 export default class BinaryWriter {
     data: Uint8Array;
     pos: number;
+    
     constructor(size = 1024) {
         this.data = new Uint8Array(size);
         this.pos = 0;
