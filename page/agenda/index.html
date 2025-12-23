@@ -89,7 +89,7 @@
         const contents = document.getElementById("contents");
         form.addEventListener("submit", (event) => {
             event.preventDefault();
-            const password = event.currentTarget.password.value.trim();
+            const password = event.currentTarget.password.value.toLowerCase().trim();
             const hashed = TSH(password);
             if (hashed === -720125209) {
                 event.currentTarget.password.disabled = true;
