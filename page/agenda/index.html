@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Meeting Agenda</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script type="module" src="/js/global.js"></script>
+
+    <style>
+        body {
+            background-image: url("/media/images/snowMask.gif");
+            background-repeat: repeat;
+            background-blend-mode: screen;
+            background-position: top;
+        }
+        input[type="submit"] {
+            width: 50%;
+            height: 3em;
+        }
+
+        .i {
+            text-indent: 50px;
+        }
+        .l {
+            text-align: right;
+        }
+
+        .showing {
+            animation: show linear 0.5s forwards;
+        }
+        .hiding {
+            animation: show linear 0.5s reverse forwards;
+        }
+        .hidden {
+            display: none;
+        }
+
+        @keyframes show {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="section" id="entry">
+        <h1>Landing Page</h1>
+        Greetings! To access this webpage's contents, please enter the password provided to you by the network
+        administrator.
+        <form id="form">
+            <p>
+                <label for="password">Password: </label>
+                <input type="text" id="password" name="password" value="">
+            </p>
+            <p>
+                <input type="submit" id="submit" name="submit" value="Submit">
+            </p>
+        </form>
+    </div>
+
+    <div class="section hidden" id="contents">
+        <h1>Notice</h1>
+        <div class="selector">
+            <p>Dear George,</p>
+            <p class="i">We are sorry to inform you, but due to the current socioeconomic climate in the world, we were unable to
+                deliver you a <i>Boston Terrier Furniture Piece</i> this holiday season. As consolation, please accept this 
+                <a href="https://www.amazon.com/DIAMOND-DOTZ-Sunnies-Diamond-Painting/dp/B0CTNSHKH8">
+                Boston Terrier Dot Art Project</a>.</p>
+            <p class="i">Thank you for your continued support and understanding in these tough times.</p>
+            <p class="l"> - Kindest regards, LAW.</p>
+        </div>
+        <img src="/media/images/christmas.gif" alt="santa riding on a sleigh" height="120">
+    </div>
+
+    <script>
+        TSH = s => { for (var i = 0, h = 9; i < s.length;)h = Math.imul(h ^ s.charCodeAt(i++), 9 ** 9); return h ^ h >>> 9 }
+        const form = document.getElementById("form");
+        const entry = document.getElementById("entry");
+        const contents = document.getElementById("contents");
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const password = event.currentTarget.password.value.trim();
+            const hashed = TSH(password);
+            if (hashed === -720125209) {
+                event.currentTarget.password.disabled = true;
+                event.currentTarget.submit.disabled = true;
+                entry.classList.add("hiding");
+                setTimeout(() => {
+                    entry.classList.add("hidden");
+                    contents.classList.remove("hidden");
+                    contents.classList.add("showing");
+                }, 500);
+            } else {
+                alert("Sorry, but you have entered the incorrect password. Please contact your network administrator for assistance.");
+            }
+        })
+    </script>
+</body>
+
+</html>
