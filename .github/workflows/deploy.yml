@@ -22,19 +22,15 @@ jobs:
         with:
           node-version: '22'
       - name: 'Build Website'
-        run: npm ci && npm run build
-      - name: 'Remove Node Modules' 
-        uses: JesseTG/rm@v1.0.3
-        with:
-          path: ./node_modules
+        run: npm ci && node build.mjs
       - name: 'Listing Website Contents'
         run: |
           echo "Listing repo after build:" 
-          ls -R .
+          ls -R ./dist/
       - name: 'Upload artifact'
         uses: actions/upload-pages-artifact@v4
         with:
-          path: ./
+          path: ./dist/
   # Deploy Job
   deploy:
     name: 'Deploy'

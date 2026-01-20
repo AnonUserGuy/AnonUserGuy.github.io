@@ -1,6 +1,5 @@
 import * as global from "@js/global.js";
-import WorldMapCanvas from "@js/lib/terraria/terraria-world-map-canvas.js";
-import MapHelper from "@js/lib/terraria/terraria-map-helper.js";
+import { WorldMapCanvas } from "terraria-minimap-visualizer";
 
 const grid = document.getElementById("grid") as HTMLDivElement;
 const mapArea = document.getElementById("mapArea") as HTMLDivElement;
@@ -67,8 +66,8 @@ uploadInput.addEventListener("change", async (event) => {
             error.textContent = e!.toString();
             error.hidden = false;
         }
-        if (map.release! > MapHelper.lastestRelease) {
-            info.textContent = `Warning: release ${map.release} newer than latest supported release (${MapHelper.lastestRelease}), might cause issues`
+        if (map.release! > WorldMapCanvas.getLatestRelease()) {
+            info.textContent = `Warning: release ${map.release} newer than latest supported release (${WorldMapCanvas.getLatestRelease()}), might cause issues`
             info.hidden = false;
         }
         global.loading(false);

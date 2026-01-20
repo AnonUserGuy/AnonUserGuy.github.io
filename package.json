@@ -11,13 +11,10 @@
     "url": "git+https://github.com/AnonUserGuy/AnonUserGuy.github.io.git"
   },
   "author": "AnonUserGuy",
-  "scripts": {
-    "build": "tsc && tsc-alias",
-    "build:watch": "concurrently --kill-others \"tsc -w\" \"tsc-alias -w\""
-  },
   "devDependencies": {
-    "concurrently": "^9.2.1",
-    "tsc-alias": "^1.8.16",
+    "esbuild": "^0.27.2",
+    "glob": "^13.0.0",
+    "terraria-minimap-visualizer": "github:AnonUserGuy/terraria-minimap-visualizer",
     "typescript": "^5.9.3"
   }
 }
