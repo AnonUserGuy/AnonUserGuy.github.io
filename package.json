@@ -11,6 +11,9 @@
     "url": "git+https://github.com/AnonUserGuy/AnonUserGuy.github.io.git"
   },
   "author": "AnonUserGuy",
+  "scripts": {
+    "build": "node build.mjs"
+  },
   "devDependencies": {
     "esbuild": "^0.27.2",
     "glob": "^13.0.0",
