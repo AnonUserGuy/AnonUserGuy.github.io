@@ -1,4 +1,3 @@
-import alias from "esbuild-plugin-alias";
 import { build } from "esbuild";
 import { cp, rm } from "node:fs/promises";
 import { glob } from "glob";
