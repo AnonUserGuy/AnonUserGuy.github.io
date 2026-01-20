@@ -102,3 +102,5 @@ function loading(bool: boolean) {
         loadingEl.setAttribute("hidden", "");
     }
 }
+
+Object.assign(window, { promiseFileAsText, promiseFileAsArrayBuffer, download, createElementEX, dotEl, loadingEl, loading })
