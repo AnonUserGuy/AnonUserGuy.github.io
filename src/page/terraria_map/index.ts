@@ -1,4 +1,3 @@
-import * as global from "@js/global.js";
 import { WorldMapCanvas } from "terraria-minimap-visualizer";
 
 const grid = document.getElementById("grid") as HTMLDivElement;
@@ -29,18 +28,18 @@ const map = new WorldMapCanvas(canvas);
     for (let i = layerNames.length - 1; i >= 0; i--) {
         let name = layerNames[i];
 
-        const checkbox = global.createElementEX("input", {
+        const checkbox = createElementEX("input", {
             "type": "checkbox",
             "id": `layer${i}`,
         }) as HTMLInputElement;
         if (i !== WorldMapCanvas.layerNames.length - 1) checkbox.checked = true;
         checkbox.addEventListener("click", doDrawFast);
-        const label = global.createElementEX("label", {
+        const label = createElementEX("label", {
             "for": `layer${i}`
         }, [name]) as HTMLLabelElement;
 
         layerCheckboxes[i] = checkbox;
-        layerOptions.prepend(global.createElementEX("div", {}, [
+        layerOptions.prepend(createElementEX("div", {}, [
             checkbox,
             label
         ]))
@@ -50,14 +49,14 @@ const map = new WorldMapCanvas(canvas);
 
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
-        global.loading(true);
+        loading(true);
         grid.classList.add("terraria-map-grid");
         mapArea.hidden = false;
         error.hidden = true;
         info.hidden = true;
         map.release = -1;
         try {
-            const buffer = await global.promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
+            const buffer = await promiseFileAsArrayBuffer(uploadInput.files[0]) as ArrayBuffer;
             await map.read(buffer);
             doDrawFast();
             getWorldInfo();
@@ -70,7 +69,7 @@ uploadInput.addEventListener("change", async (event) => {
             info.textContent = `Warning: release ${map.release} newer than latest supported release (${WorldMapCanvas.getLatestRelease()}), might cause issues`
             info.hidden = false;
         }
-        global.loading(false);
+        loading(false);
     }
 });
 
@@ -94,28 +93,28 @@ function doDrawAccurate() {
 function getWorldInfo() {
     worldName.textContent = String(map.worldName);
     const contents = [
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
             map.worldId,
         ]),
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "Version: " : "版本: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "Version: " : "版本: "]),
             map.release,
         ]),
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "Save count: " : "保存次數: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "Save count: " : "保存次數: "]),
             map.revision! > -1 ? map.revision : !map.isChinese ? "unknown" : "未知",
         ]),
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "Dimensions: " : "尺寸: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "Dimensions: " : "尺寸: "]),
             `${map.width}x${map.height}`,
         ]),
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "Underground depth: " : "地下深度: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "Underground depth: " : "地下深度: "]),
             `${map.worldSurfaceEstimated ? "~" : ""}${map.worldSurface}`,
         ]),
-        global.createElementEX("span", {}, [
-            global.createElementEX("b", {}, [!map.isChinese ? "Caverns depth: " : "洞穴深度: "]),
+        createElementEX("span", {}, [
+            createElementEX("b", {}, [!map.isChinese ? "Caverns depth: " : "洞穴深度: "]),
             `~${map.rockLayer}`,
         ]),
     ]
@@ -183,14 +182,14 @@ downloadImg.addEventListener("click", (event) => {
     doDrawAccurate();
     canvas.toBlob((blob) => {
         if (blob) {
-            global.download(blob, getFileName());
+            download(blob, getFileName());
         }
     })
 })
 
 downloadSchem.addEventListener("click", (event) => {
     const blob = new Blob([map.writeSchematic() as ArrayBuffer]);
-    global.download(blob, map.worldName + ".TEditSch"); 
+    download(blob, map.worldName + ".TEditSch"); 
 })
 
 function getFileName() {

@@ -1,5 +1,4 @@
 import * as uuid from "./get_minecraft_usernames_from_uuids.js";
-import * as global from "./global.js";
 
 export interface Profile {
     uuid: string;
@@ -55,7 +54,7 @@ export async function updateTimeline(uploadedFiles: FileList | null, profiles: P
         profileIndices[i] = profileIndex;
     }
 
-    await Promise.allSettled(files.map((file, i) => global.promiseFileAsText(file).then((text) => {
+    await Promise.allSettled(files.map((file, i) => promiseFileAsText(file).then((text) => {
         if (!text) return;
 
         const data = JSON.parse(text);

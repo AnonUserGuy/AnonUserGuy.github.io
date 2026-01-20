@@ -1,3 +1,4 @@
+import alias from "esbuild-plugin-alias";
 import { build } from "esbuild";
 import { cp, rm } from "node:fs/promises";
 import { glob } from "glob";
@@ -13,8 +14,7 @@ await build({
   bundle: true,
   format: "esm",
   platform: "browser",
-  sourcemap: true,
-  external: ["@js/global.js"]
+  sourcemap: true
 });
 
 await build({

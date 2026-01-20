@@ -1,4 +1,3 @@
-import * as global from "@js/global.js";
 import * as manager from "@js/minecraft_timeline_manager.js";
 
 const DateTimeFormat = new Intl.DateTimeFormat(undefined, {
@@ -31,10 +30,10 @@ function sameDay(d1: Date, d2: Date) {
 }
 
 uploadInput.addEventListener("change", async () => {
-    global.loading(true);
+    loading(true);
     await manager.updateTimeline(uploadInput.files, profiles, timeline);
     timelinePrint();
-    global.loading(false);
+    loading(false);
 });
 
 resetInput.addEventListener("click", () => {
@@ -136,12 +135,12 @@ function timelinePrint() {
         if (!sameDay(date, prevDate)) {
             // different day
 
-            const dateSummaryEl = global.createElementEX("summary", {}, [
-                global.createElementEX("h2", {}, [
+            const dateSummaryEl = createElementEX("summary", {}, [
+                createElementEX("h2", {}, [
                     DateFormat.format(date)
                 ])
             ]);
-            const dateDetailsEl = global.createElementEX("details", { "id": `date${i}` }, [dateSummaryEl]) as HTMLDetailsElement;
+            const dateDetailsEl = createElementEX("details", { "id": `date${i}` }, [dateSummaryEl]) as HTMLDetailsElement;
             dateDetailsEl.open = detailsesAllOpen;
             dateSummaryEl.addEventListener("click", focusDetailsIfWentOffscreen);
             timelineDiv.appendChild(dateDetailsEl);
@@ -152,13 +151,13 @@ function timelinePrint() {
         if (!sameDay(date, prevDate) || hour !== prevDate.getHours()) {
             // different hour
 
-            const hourSummaryEl = global.createElementEX("summary", {}, [
-                global.createElementEX("h3", {}, [
+            const hourSummaryEl = createElementEX("summary", {}, [
+                createElementEX("h3", {}, [
                     `${(hour + 11) % 12 + 1} ${hour >= 12 ? "PM" : "AM"}`
                 ])
             ]);
             const hourListEl = document.createElement("ul");
-            const hourDetailsEl = global.createElementEX("details", { "id": `hour${i}` }, [
+            const hourDetailsEl = createElementEX("details", { "id": `hour${i}` }, [
                 hourSummaryEl,
                 hourListEl
             ]) as HTMLDetailsElement;
@@ -177,7 +176,7 @@ function timelinePrint() {
         if (!currentTimeEl || date.getTime() !== prevDate.getTime()) {
             // different instance of time
 
-            const timestampEl = global.createElementEX("b", {}, [DateTimeFormat.format(date) + " "]);
+            const timestampEl = createElementEX("b", {}, [DateTimeFormat.format(date) + " "]);
             eventItemEl.appendChild(timestampEl);
 
             if (i + 1 < timeline.length && date.getTime() === timeline[i + 1][0].getTime()) {
@@ -197,11 +196,11 @@ function timelinePrint() {
 
 
         const spanEl = !profile.generated ?
-            global.createElementEX("a", {
+            createElementEX("a", {
                 "href": `https://namemc.com/profile/${profile.uuid}`,
                 "target": "_blank"
             }, [profile.username!])
-            : global.createElementEX("span", {}, [profile.username!]);
+            : createElementEX("span", {}, [profile.username!]);
         spanEl.setAttribute("title", profile.uuid);
         spanEl.setAttribute("class", `p${profile.nameless ? " pn" : ""} p${profileIndex}`);
 
