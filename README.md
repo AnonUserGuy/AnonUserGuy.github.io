@@ -16,10 +16,4 @@ npm install
 ```bash
 npm run build
 ``` 
-Output Javascript files will be generated **alongside** source Typescript files. 
-
-### Build in watch mode
-```bash
-npm run build:watch
-```
-As long as terminal is open, output Javascript files will be generated continuously as Typescript files are edited.
+Output website will be generated at ``./dist/``.
