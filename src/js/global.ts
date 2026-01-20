@@ -32,11 +32,13 @@ export function promiseFileAsArrayBuffer(file: File): Promise<ArrayBuffer | null
     });
 }
 
+/*
 export async function decompressBuffer(bytes: BufferSource, type: CompressionFormat) {
   const decompressedStream = new Response(bytes).body!.pipeThrough(new DecompressionStream(type));
   const buffer = await new Response(decompressedStream).arrayBuffer();
   return buffer;
 }
+*/
 
 export function download(file: Blob | File, filename?: string, type?: string) {
     const a = document.createElement("a");
