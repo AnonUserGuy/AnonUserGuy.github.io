@@ -57,7 +57,41 @@
             
             <div class="section" hidden>
                 <h2 id="worldName"></h2>
-                <div id="worldInfo"></div>
+                <div id="worldInfo">
+                    <span>
+                        <b id="worldBId">ID: </b>
+                        <span id="worldId"></span>
+                    </span>
+                    <span>
+                        <b id="worldBVersion">Version: </b>
+                        <span id="worldVersion"></span>
+                    </span>
+                    <span>
+                        <b id="worldBRevision">Save Count: </b>
+                        <span id="worldRevision"></span>
+                    </span>
+                    <span>
+                        <b id="worldBDimensions">Dimensions: </b>
+                        <span id="worldDimensions"></span>
+                    </span>
+                    <span>
+                        <label for="worldSurface"><b id="worldBSurface">Underground Depth: </b></label>
+                        <span id="worldSurfaceEstimated" hidden>~</span>
+                        <input id="worldSurface" type="number" min="0" step="1" value="1" size="4"/>
+                    </span>
+                    <span>
+                        <label for="worldRockLayer"><b id="worldBRockLayer">Caverns Depth: </b></label>
+                        <span id="worldRockLayerEstimated" hidden>~</span>
+                        <input id="worldRockLayer" type="number" min="0" step="1" value="1" size="4"/>
+                    </span>
+                    <span>
+                        <b id="worldBUnderworldLayer">Underworld Depth: </b>
+                        <span id="worldUnderworldLayer"></span>
+                    </span>
+                    <div>
+                        <button id="updateDepth">Update Depths</button>
+                    </div>
+                </div>
             </div>
             <div class="section terraria-map-tileinfo" id="tileInfo" hidden></div>
         </div>
@@ -74,7 +108,7 @@
         </div>
 
         <div class="terraria-map-footer">
-            <p>Updated as of v1.4.4.9</p>
+            <p id="updatedNote">Updated as of xxx</p>
         </div>
     </div>
 

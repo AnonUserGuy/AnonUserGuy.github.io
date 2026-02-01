@@ -1,16 +1,36 @@
 import { WorldMapCanvas } from "terraria-minimap-visualizer";
+import mapData from "./terraria-map-data.json";
 
 const grid = document.getElementById("grid") as HTMLDivElement;
 const mapArea = document.getElementById("mapArea") as HTMLDivElement;
 const mapContainer = document.getElementById("mapContainer") as HTMLDivElement;
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+
 const worldName = document.getElementById("worldName") as HTMLHeadingElement;
+const worldBId = document.getElementById("worldBId") as HTMLElement;
+const worldId = document.getElementById("worldId") as HTMLSpanElement;
+const worldBVersion = document.getElementById("worldBVersion") as HTMLElement;
+const worldVersion = document.getElementById("worldVersion") as HTMLSpanElement;
+const worldBRevision = document.getElementById("worldBRevision") as HTMLElement;
+const worldRevision = document.getElementById("worldRevision") as HTMLSpanElement;
+const worldBDimensions = document.getElementById("worldBDimensions") as HTMLElement;
+const worldDimensions = document.getElementById("worldDimensions") as HTMLSpanElement;
+const worldBSurface = document.getElementById("worldBSurface") as HTMLElement;
+const worldSurfaceEstimated = document.getElementById("worldSurfaceEstimated") as HTMLSpanElement;
+const worldSurface = document.getElementById("worldSurface") as HTMLInputElement;
+const worldBRockLayer = document.getElementById("worldBRockLayer") as HTMLElement;
+const worldRockLayerEstimated = document.getElementById("worldRockLayerEstimated") as HTMLSpanElement;
+const worldRockLayer = document.getElementById("worldRockLayer") as HTMLInputElement;
+const worldBUnderworldLayer = document.getElementById("worldBUnderworldLayer") as HTMLSpanElement;
+const worldUnderworldLayer = document.getElementById("worldUnderworldLayer") as HTMLElement;
+const updateDepth = document.getElementById("updateDepth") as HTMLButtonElement;
 const worldInfo = document.getElementById("worldInfo") as HTMLDivElement;
 const tileInfo = document.getElementById("tileInfo") as HTMLDivElement;
 
 const error = document.getElementById("error") as HTMLParagraphElement;
 const info = document.getElementById("info") as HTMLParagraphElement;
+const updatedNote = document.getElementById("updatedNote") as HTMLParagraphElement;
 
 const downloadImg = document.getElementById("downloadImg") as HTMLButtonElement;
 const downloadSchem = document.getElementById("downloadSchem") as HTMLButtonElement;
@@ -22,7 +42,7 @@ const zoomAmount = document.getElementById("zoomAmount") as HTMLInputElement;
 const zoomIn = document.getElementById("zoomIn") as HTMLButtonElement;
 const zoomOut = document.getElementById("zoomOut") as HTMLButtonElement;
 
-const map = new WorldMapCanvas(canvas);
+const map = new WorldMapCanvas(mapData, canvas);
 
 ((layerNames: string[]) => {
     for (let i = layerNames.length - 1; i >= 0; i--) {
@@ -45,7 +65,7 @@ const map = new WorldMapCanvas(canvas);
         ]))
     }
 })(WorldMapCanvas.layerNames);
-
+updatedNote.innerText = `Updated as of v${map.mapData.latestVersion()}`;
 
 uploadInput.addEventListener("change", async (event) => {
     if (uploadInput.files && uploadInput.files[0]) {
@@ -65,15 +85,15 @@ uploadInput.addEventListener("change", async (event) => {
             error.textContent = e!.toString();
             error.hidden = false;
         }
-        if (map.release! > WorldMapCanvas.getLatestRelease()) {
-            info.textContent = `Warning: release ${map.release} newer than latest supported release (${WorldMapCanvas.getLatestRelease()}), might cause issues`
+        if (!map.isReleaseSafe()) {
+            info.textContent = `Warning: release ${map.release} newer than latest supported release (${mapData.release}), might cause issues`
             info.hidden = false;
         }
         loading(false);
     }
 });
 
-function doDraw() {
+function getActiveLayers() {
     const layers = layerCheckboxes.map(box => box.checked);
     if (layers[layers.length - 1] || layers[0] && !layers.slice(1, layers.length - 1).some(val => val)) {
         canvas.classList.add("terraria-map-lighting");
@@ -83,47 +103,72 @@ function doDraw() {
     return layers;
 }
 function doDrawFast() { 
-    map.drawFast(doDraw()); 
+    map.drawFast(getActiveLayers()); 
 }
 function doDrawAccurate() { 
-    map.drawAccurate(doDraw()); 
+    map.drawAccurate(getActiveLayers()); 
 }
 
 
 function getWorldInfo() {
-    worldName.textContent = String(map.worldName);
-    const contents = [
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "World ID: " : "識別號碼: "]),
-            map.worldId,
-        ]),
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "Version: " : "版本: "]),
-            map.release,
-        ]),
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "Save count: " : "保存次數: "]),
-            map.revision! > -1 ? map.revision : !map.isChinese ? "unknown" : "未知",
-        ]),
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "Dimensions: " : "尺寸: "]),
-            `${map.width}x${map.height}`,
-        ]),
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "Underground depth: " : "地下深度: "]),
-            `${map.worldSurfaceEstimated ? "~" : ""}${map.worldSurface}`,
-        ]),
-        createElementEX("span", {}, [
-            createElementEX("b", {}, [!map.isChinese ? "Caverns depth: " : "洞穴深度: "]),
-            `~${map.rockLayer}`,
-        ]),
-    ]
-    worldInfo.replaceChildren(...contents);
+    worldName.textContent = map.worldName;
+
+    if (map.isChinese) {
+        worldBId.textContent = "識別號碼: ";
+        worldBVersion.textContent = "版本: ";
+        worldBRevision.textContent = "保存次數: ";
+        worldBDimensions.textContent = "尺寸: ";
+        worldBSurface.textContent = "地下深度: ";
+        worldBRockLayer.textContent = "洞穴深度: ";
+        worldBUnderworldLayer.textContent = "冥界深度: ";
+    } else {
+        worldBId.textContent = "ID: ";
+        worldBVersion.textContent = "Version: ";
+        worldBRevision.textContent = "Save Count: ";
+        worldBDimensions.textContent = "Dimensions: ";
+        worldBSurface.textContent = "Underground Depth: ";
+        worldBRockLayer.textContent = "Caverns Depth: ";
+        worldBUnderworldLayer.textContent = "Underworld Depth: ";
+    }
+
+    worldId.textContent = String(map.worldId);
+    worldVersion.textContent = `${map.version} (${map.release})`;
+    worldRevision.textContent = map.revision > -1 ? String(map.revision) : !map.isChinese ? "Unknown" : "未知";
+    worldDimensions.textContent = `${map.width}x${map.height}`;
+    worldSurface.value = String(map.worldSurface);
+    worldSurfaceEstimated.hidden = !map.worldSurfaceEstimated;
+    worldRockLayer.value = String(map.rockLayer);
+    worldRockLayerEstimated.hidden = !map.rockLayerEstimated;
+    worldUnderworldLayer.textContent = String(map.underworldLayer);
+
     worldInfo.classList.add("text-entries");
     worldInfo.parentElement!.hidden = false;
     tileInfo.textContent = "Click any tile for more info on it!";
     tileInfo.hidden = false;
 }
+
+updateDepth.addEventListener("click", (event) => {
+    const newWorldSurface = parseInt(worldSurface.value);
+    const newRockLayer = parseInt(worldRockLayer.value);
+    
+    let dirty = false;
+    if (newWorldSurface !== map.worldSurface) {
+        map.worldSurface = newWorldSurface;
+        map.worldSurfaceEstimated = false;
+        dirty = true;
+    }
+    if (newRockLayer !== map.rockLayer) {
+        map.rockLayer = newRockLayer;
+        map.rockLayerEstimated = false;
+        dirty = true;
+    }
+
+    if (dirty) {
+        map.redrawAirLayer();
+        doDrawFast();
+        getWorldInfo();
+    }
+});
 
 
 let zoom: number;
@@ -162,8 +207,7 @@ zoomOut.addEventListener('click', (event) => {
 
 canvas.addEventListener('click', (event) => {
     const [x, y] = getCursorPosition(canvas, event);
-    const tile = map.tile(x, y);
-    tileInfo.textContent = `(${x},${y}): ${tile ? tile.toString() : "Empty"}`;
+    tileInfo.textContent = map.getString(x, y);
 });
 
 function getCursorPosition(canvas: HTMLElement, event: MouseEvent) {
