@@ -228,3 +228,20 @@ abbr {
     background-color: beige;
     margin: 16px;
 }
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table tr:nth-child(odd) > *:nth-child(odd):not([colspan]) {
+  background-color: LightSteelBlue;
+}
+
+table tr:nth-child(even) > *:nth-child(even):not([colspan]) {
+  background-color: LightSteelBlue;
+}
+
+table tr > th[colspan] {
+  background-color: LightSkyBlue;
+}

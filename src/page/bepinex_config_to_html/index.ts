@@ -12,6 +12,7 @@ uploadInput.addEventListener("change", () => {
     fileReader.onload = function () {
         const table = doThing(fileReader.result as string);
         realTableSection.replaceChildren(table);
+        copyOutput.removeAttribute("disabled");
     }
 
     fileReader.readAsText(uploadInput.files[0]);
@@ -56,7 +57,7 @@ function doThing(text: string): HTMLTableElement {
             );
             continue;
         }
-        match = line.match(/^(\w*)\s*=/m);
+        match = line.match(/^([^#\[].*?)\s*=/m);
         if (match) {
             const name = match[1];
             let type: string | null = null;
