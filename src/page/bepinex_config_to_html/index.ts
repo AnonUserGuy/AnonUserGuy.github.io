@@ -65,7 +65,7 @@ function doThing(text: string): HTMLTableElement {
             for (let j = i - 1; j > 0; j--) {
                 const line2 = lines[j];
                 if (!defaultVal) {
-                    const match2 = line2.match(/^# Default value: (\w*)$/m);
+                    const match2 = line2.match(/^# Default value: (.*)$/m);
                     if (match2) {
                         defaultVal = match2[1];
                         continue;
