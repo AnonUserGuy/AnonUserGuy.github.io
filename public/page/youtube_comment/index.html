@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Google Takeout Youtube Comment Viewer</title>
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <script src="/js/global.js"></script>
+    <script type="module" src="./index.js"></script>
+</head>
+
+<body>
+    <div>
+        <a href="/">&lt-- go back</a>
+    </div>
+
+    <div class="section">
+        <p>
+            Upload all "comments.csv" files to print them in a more human-efficent format 
+        </p>
+        <p>
+            <input id="uploadInput" type="file" accept="text/csv" multiple />
+            <button id="resetInput">Clear</button>
+        </p>
+    </div>
+
+    <div class="section-timeline" id="commentsDiv" hidden></div>
+</body>
+
+</html>

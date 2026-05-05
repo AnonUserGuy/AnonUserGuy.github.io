@@ -91,7 +91,7 @@ const loadingEl = createElementEX("img", {
 })
 
 window.onload = function () {
-    document.body.appendChild(dotEl);
+    //document.body.appendChild(dotEl);
     document.body.appendChild(loadingEl);
 }
 

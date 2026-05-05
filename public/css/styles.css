@@ -1,66 +1,17 @@
+
+/* 
+### general ### 
+*/
+
 body {
     background-color: powderblue;
     font-family: "Comic Sans MS", "Comic Sans", sans-serif;
     text-align: center;
 }
 
-summary {
-    position: sticky;
-    top: 0;
-    background-color: lightblue;
-    z-index: 1;
-    cursor: pointer;
-    height: 53px;
-    /* i am discontent with this solution */
-}
-
-details>details>summary {
-    top: 53px;
-    height: revert;
-    z-index: 0;
-}
-
-summary>h1,
-summary>h2,
-summary>h3,
-summary>h4,
-summary>h5,
-summary>h6 {
-    display: inline-block;
-    margin-bottom: 0px;
-}
-
-details>ul {
-    margin-bottom: 0px;
-}
-
 input[type="file"] {
     background-color: LightSteelBlue;
     max-width: 100%
-}
-
-.text-entries {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-}
-
-.right-button {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-}
-
-@media (max-width: 500px) {
-    .right-button {
-        position: static;
-        text-align: right;
-    }
-}
-
-.right-button>input[type="number"] {
-    width: 40px;
 }
 
 .section,
@@ -78,21 +29,6 @@ input[type="file"] {
     width: 900px;
     padding-bottom: 19.92px;
     text-align: left;
-}
-
-.timeline-buttons-outer {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    height: 100%;
-    visibility: hidden;
-}
-
-.timeline-buttons {
-    position: sticky;
-    top: 8px;
-    z-index: 2;
-    visibility: visible;
 }
 
 .selector {
@@ -124,6 +60,85 @@ input[type="file"] {
     transform: translate(-50%, -50%);
 }
 
+abbr {
+    cursor: help;
+}
+
+
+
+/* 
+### advancement_timeline ### 
+*/
+
+summary {
+    position: sticky;
+    top: 0;
+    background-color: lightblue;
+    z-index: 1;
+    cursor: pointer;
+    height: 53px;
+    /* i am discontent with this solution */
+}
+
+details>details>summary {
+    top: 53px;
+    height: revert;
+    z-index: 0;
+}
+
+summary>h1,
+summary>h2,
+summary>h3,
+summary>h4,
+summary>h5,
+summary>h6 {
+    display: inline-block;
+    margin-bottom: 0px;
+}
+
+details>ul {
+    margin-bottom: 0px;
+}
+
+.text-entries {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.right-button {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+}
+
+@media (max-width: 500px) {
+    .right-button {
+        position: static;
+        text-align: right;
+    }
+}
+
+.right-button>input[type="number"] {
+    width: 40px;
+}
+
+.timeline-buttons-outer {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    height: 100%;
+    visibility: hidden;
+}
+
+.timeline-buttons {
+    position: sticky;
+    top: 8px;
+    z-index: 2;
+    visibility: visible;
+}
+
 .p {
     text-shadow: 1px 1px 0 #000;
     text-decoration: none;
@@ -135,10 +150,11 @@ input[type="file"] {
     text-decoration-style: dotted;
 }
 
-abbr {
-    cursor: help;
-}
 
+
+/* 
+### terraria_map ### 
+*/
 
 .terraria-map-grid {
     display: grid;
@@ -185,7 +201,7 @@ abbr {
 @media (min-width: 900px) {
     .terraria-map-grid {
         grid-template-columns: 1fr 2fr;
-        grid-template-rows: 1fr 1fr;    
+        grid-template-rows: 1fr 1fr;
         height: calc(100vh - 16px);
     }
 
@@ -229,19 +245,58 @@ abbr {
     margin: 16px;
 }
 
+
+
+/* 
+### bepinex_config_to_html ### 
+*/
+
 table {
     border-collapse: collapse;
     width: 100%;
 }
 
-table tr:nth-child(odd) > *:nth-child(odd):not([colspan]) {
-  background-color: LightSteelBlue;
+table tr:nth-child(odd)>*:nth-child(odd):not([colspan]) {
+    background-color: LightSteelBlue;
 }
 
-table tr:nth-child(even) > *:nth-child(even):not([colspan]) {
-  background-color: LightSteelBlue;
+table tr:nth-child(even)>*:nth-child(even):not([colspan]) {
+    background-color: LightSteelBlue;
 }
 
-table tr > th[colspan] {
-  background-color: LightSkyBlue;
+table tr>th[colspan] {
+    background-color: LightSkyBlue;
+}
+
+
+
+/* 
+### youtube_comment ### 
+*/
+
+.comment {
+    margin: 10px;
+    padding: 0px;
+}
+
+.comment-header {
+    font-size: 0.8rem;
+}
+
+.comment-header>h3 {
+    display: inline-block;
+    margin: 0px;
+    margin-right: 4px;
+    font-size: 0.8rem;
+    font-weight: normal;
+}
+
+.comment-header>h3>a {
+    color: black;
+    text-decoration: none;
+} 
+
+.comment-body {
+    background-color: LightSteelBlue;
+    padding: 10px;
 }

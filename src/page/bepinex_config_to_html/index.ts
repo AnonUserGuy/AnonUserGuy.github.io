@@ -111,3 +111,5 @@ function doThing(text: string): HTMLTableElement {
     }
     return table;
 }
+
+export {}
