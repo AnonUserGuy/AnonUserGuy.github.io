@@ -1,3 +1,4 @@
+import * as info from "@js/get_youtube_info.js";
 
 interface Comment {
     id: string,
@@ -58,7 +59,7 @@ function commentsPrint() {
                     createElementEX("a", {
                         "href": `https://${comment.isPost ? "www.youtube.com/post" : "youtu.be"}/${comment.videoId}`,
                         "target": "_blank"
-                    }, [comment.videoId])
+                    }, [comment.videoTitle || createElementEX("i", {}, [comment.videoId])])
                 ]),
                 createElementEX("span", {}, [
                     createElementEX("a", {
@@ -114,10 +115,18 @@ function commentsPrint() {
 async function updateComments(uploadedFiles: FileList | null, comments: Comment[]) {
     if (!uploadedFiles) return;
     const files = Array.from(uploadedFiles);
-    await Promise.allSettled(files.map((file, i) => promiseFileAsText(file).then((text) => {
+    const newComments: Comment[] = [];
+
+    await Promise.allSettled(files.map(file => promiseFileAsText(file).then((text) => {
         if (!text) return;
-        insertComments(comments, parseCommentCSV(text));
+        insertComments(newComments, parseCommentCSV(text));
     })));
+
+    const videoTitles = await info.getVideoTitlesFromIds(newComments.map(comment => comment.videoId));
+    for (let i = 0; i < videoTitles.length; i++) {
+        newComments[i].videoTitle = videoTitles[i];
+    }
+    insertComments(comments, newComments);
 }
 
 function parseCommentCSV(text: string) {

@@ -1,6 +1,9 @@
 interface IDs {
     [key: string]: string;
 }
+interface AwaitingID {
+    [key: string]: number[];
+}
 
 export async function getVideoTitlesFromIds(ids: string[]) {
 
@@ -9,8 +12,13 @@ export async function getVideoTitlesFromIds(ids: string[]) {
     const result: string[] = [];
 
     const responsePromises: Promise<any>[] = [];
+    const responseIndices: AwaitingID = {};
+
     for (let i = 0; i < ids.length; i++) {
         const unfixedId = ids[i];
+        if (!unfixedId) {
+            continue;
+        }
         const reg = /([\w\-]{11})/i;
         const match = unfixedId.match(reg);
         if (!match) {
@@ -21,15 +29,23 @@ export async function getVideoTitlesFromIds(ids: string[]) {
         const id = match[1];
 
         if (!(id in videoTitles)) {
+            if (!responseIndices[id]) {
+                responseIndices[id] = [i];
+            } else {
+                responseIndices[id].push(i);
+            }
+
             responsePromises.push(fetch(`https://www.youtube.com/oembed?url=youtube.com/watch?v=${id}&format=json`).then(async (response) => {
                 if (response.ok) {
                     const data = await response.json();
                     videoTitles[id] = data.title;
-                } else if (response.status === 404) {
+                } else {
                     videoTitles[id] = "";
                 }
             }).finally(() => {
-                result[i] = videoTitles[id] || "";
+                for (const index of responseIndices[id]) {
+                    result[index] = videoTitles[id] || "";
+                }
             }));
         } else {
             result[i] = videoTitles[id] || "";
