@@ -10,9 +10,11 @@ interface Comment {
     id: string,
     userId: string,
     username?: string,
+    userStatus?: number,
     timestamp: number,
     videoId: string,
     videoTitle?: string,
+    videoStatus?: number,
     type: CommentType,
     price?: number,
     parentId?: string,
@@ -24,6 +26,14 @@ interface CSV {
     count: number,
     fields: { [key: string]: string[] }
 }
+
+const USER_AD_BLOCKED = -1;
+const USER_NOT_FOUND = 404;
+
+const VIDEO_NONEXISTENT = 400;
+const VIDEO_EMBED_FAILED = 401;
+const VIDEO_PRIVATE = 403;
+const VIDEO_BLOCKED = 404;
 
 const uploadInput = document.getElementById("uploadInput") as HTMLInputElement;
 const resetInput = document.getElementById("resetInput") as HTMLButtonElement;
@@ -64,6 +74,36 @@ function getUniqueIndex<T>(id: T, source: T[]) {
         source.push(id);
     }
     return index;
+}
+
+function getCommunityPost(comment: Comment) {
+    return `Some community post #${getUniqueIndex(comment.videoId, uniquePosts) + 1}`;
+}
+
+function getUnknownUser(comment: Comment) {
+    return `${comment.userStatus === USER_NOT_FOUND ? "Unavailable" : "Some"} user #${getUniqueIndex(comment.userId, uniqueUnknownUsers) + 1}`;
+}
+
+function getUnknownVideo(comment: Comment) {
+    const index = getUniqueIndex(comment.videoId, uniqueUnknownVideos) + 1;
+    let str: string;
+    switch (comment.videoStatus) {
+        case VIDEO_NONEXISTENT: 
+            str = "Nonexistent video";
+            break;
+        case VIDEO_EMBED_FAILED:
+            str = "Embed disabled video";
+            break;
+        case VIDEO_PRIVATE:
+            str = "Private video";
+            break;
+        case VIDEO_BLOCKED:
+            str = "Blocked video";
+            break;
+        default:
+            str = "Some video";
+    }
+    return `${str} #${index}`;
 }
 
 function errorsPrint() {
@@ -160,13 +200,13 @@ function commentsPrint() {
                     createElementEX("a", {
                         "href": `https://www.youtube.com/channel/${comment.userId}`,
                         "target": "_blank"
-                    }, [comment.username || createElementEX("i", {}, [`Unavailable user #${getUniqueIndex(comment.userId, uniqueUnknownUsers) + 1}`])]),
+                    }, [comment.username || createElementEX("i", {}, [getUnknownUser(comment)])]),
                     " > ",
                     createElementEX("a", {
                         "href": `https://${comment.type === CommentType.Post ? "www.youtube.com/post" : "youtu.be"}/${comment.videoId}`,
                         "target": "_blank"
-                    }, [comment.type === CommentType.Post ? createElementEX("i", {}, [`Some community post #${getUniqueIndex(comment.videoId, uniquePosts) + 1}`]) :
-                        comment.videoTitle || createElementEX("i", {}, [`Unavailable video #${getUniqueIndex(comment.videoId, uniqueUnknownVideos) + 1}`])
+                    }, [comment.type === CommentType.Post ? createElementEX("i", {}, [getCommunityPost(comment)]) :
+                        comment.videoTitle || createElementEX("i", {}, [getUnknownVideo(comment)])
                     ])
                 ]),
                 createElementEX("span", {}, [
@@ -199,25 +239,35 @@ async function updateComments(uploadedFiles: FileList | null, comments: Comment[
         const result = results[i];
         if (result.status === "rejected") {
             const error = `File \"${uploadedFiles[i].name}\" failed: ${result.reason}`;
-            console.error(error);
             errors.push(error);
         }
     }
 
+    let adblockError = false;
     if (getData) {
         await Promise.allSettled([
             info.getVideoTitlesFromIds(newComments.map(comment => comment.videoId)).then(videoTitles => {
                 for (let i = 0; i < videoTitles.length; i++) {
-                    if (videoTitles[i]) {
-                        newComments[i].videoTitle = videoTitles[i];
+                    const videoTitle = videoTitles[i];
+                    if (typeof videoTitle === "string") {
+                        newComments[i].videoTitle = videoTitle;
+                    } else if (typeof videoTitles[i] === "number") {
+                        newComments[i].videoStatus = videoTitle;
                     }
                 }
             }),
             info.getUsernamesFromIds(newComments.map(comment => comment.userId)).then(usernames => {
                 for (let i = 0; i < usernames.length; i++) {
-                    if (usernames[i]) {
-                        newComments[i].username = usernames[i];
-                    } 
+                    const username = usernames[i];
+                    if (typeof username === "string") {
+                        newComments[i].username = username;
+                    } else if (typeof usernames[i] === "number") {
+                        if (!adblockError && username === USER_AD_BLOCKED) {
+                            adblockError = true;
+                            errors.push("Username resolution failed due to your ad blocker. Oh well, it's not a big deal.");
+                        }
+                        newComments[i].userStatus = username;
+                    }
                 }
             })
         ])
