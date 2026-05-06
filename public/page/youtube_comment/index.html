@@ -20,12 +20,20 @@
 
     <div class="section">
         <p>
-            Upload all "comments.csv" files to print them in a more human-efficent format 
+            Upload all "comments.csv" files from a <a href="https://takeout.google.com/" target="_blank">Google Takeout</a> export to print them in a more human-readable format!
+        </p>
+        <p>
+            <i>(Also works on "live chat.csv" files, but direct links to live chats don't work.)</i>
+        </p>
+        <p>
+            <input type="checkbox" id="getInput" checked="true">
+            <label for="getInput">Get usernames/video titles</label>
         </p>
         <p>
             <input id="uploadInput" type="file" accept=".csv, text/csv" multiple />
-            <button id="resetInput">Clear</button>
+            <button id="resetInput">Clear Comments</button>
         </p>
+        <div class="error" id="error" hidden></div>
     </div>
 
     <div class="section-timeline" id="commentsDiv" hidden></div>
