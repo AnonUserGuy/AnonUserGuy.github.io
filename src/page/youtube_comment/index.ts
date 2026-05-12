@@ -88,7 +88,7 @@ function getUnknownVideo(comment: Comment) {
     const index = getUniqueIndex(comment.videoId, uniqueUnknownVideos) + 1;
     let str: string;
     switch (comment.videoStatus) {
-        case VIDEO_NONEXISTENT: 
+        case VIDEO_NONEXISTENT:
             str = "Nonexistent video";
             break;
         case VIDEO_EMBED_FAILED:
@@ -209,16 +209,14 @@ function commentsPrint() {
                         comment.videoTitle || createElementEX("i", {}, [getUnknownVideo(comment)])
                     ])
                 ]),
-                createElementEX("span", {}, [
-                    createElementEX("a", {
-                        "href": `https://${comment.type === CommentType.Post ? `www.youtube.com/post/${comment.videoId}?` : `youtu.be/${comment.videoId}&`}lc=${comment.id}`,
-                        "target": "_blank"
-                    }, [
-                        createElementEX("time", { "datetime": `${comment.timestamp}` }, [
-                            new Date(comment.timestamp).toLocaleString()
-                        ])
+                createElementEX("a", {
+                    "href": `https://${comment.type === CommentType.Post ? `www.youtube.com/post/${comment.videoId}?` : `youtu.be/${comment.videoId}&`}lc=${comment.id}`,
+                    "target": "_blank"
+                }, [
+                    createElementEX("time", { "datetime": `${comment.timestamp}` }, [
+                        new Date(comment.timestamp).toLocaleString()
                     ])
-                ]),
+                ])
             ]),
             createElementEX("div", { "class": "comment-body" }, commentBody)
         ]);
@@ -264,7 +262,7 @@ async function updateComments(uploadedFiles: FileList | null, comments: Comment[
                     } else if (typeof usernames[i] === "number") {
                         if (!adblockError && username === USER_AD_BLOCKED) {
                             adblockError = true;
-                            errors.push("Username resolution failed due to your ad blocker. Oh well, it's not a big deal.");
+                            errors.push("Username resolution failed due to your ad blocker. Oh well, it's no big deal.");
                         }
                         newComments[i].userStatus = username;
                     }

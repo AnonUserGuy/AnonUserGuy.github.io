@@ -314,3 +314,97 @@ table tr>th[colspan] {
 .comment-livechat {
     color: MediumVioletRed;
 }
+
+
+
+/*
+### customizable_word_game ###
+*/
+.word-board {
+    display: flex;
+    flex-direction: column;
+}
+
+.word-row {
+    display: flex;
+    justify-content: center;
+}
+
+.word-tile {
+    display: flex;
+    background-color: lightsteelblue;
+    color: white;
+    width: 60px;
+    aspect-ratio : 1 / 1;
+    margin: 3px;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    text-transform: uppercase;
+    font-weight: bold;
+    box-sizing: border-box;
+}
+
+.word-tile[data-state="empty"] {
+    border: 4px solid grey;
+}
+
+.word-tile[data-state="typing"] {
+    border: 4px solid white;
+}
+
+.word-tile[data-state="absent"] {
+    background-color: #555;
+}
+
+.word-tile[data-state="present"] {
+    background-color: DarkKhaki;
+}
+
+.word-tile[data-state="correct"] {
+    background-color: MediumSeaGreen;
+}
+
+
+.word-keyboard {
+    display: flex;
+    flex-direction: column;
+}
+
+.word-keyrow {
+    display: flex;
+    justify-content: center;
+}
+
+.word-key {
+    display: flex;
+    background-color: grey;
+    color: white;
+    width: 40px;
+    height: 50px;
+    margin: 3px;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+.word-key[data-state="absent"] {
+    background-color: #555;
+}
+
+.word-key[data-state="present"] {
+    background-color: DarkKhaki;
+}
+
+.word-key[data-state="correct"] {
+    background-color: MediumSeaGreen;
+}
+
+.word-key-wide {
+    width: 60px;
+}
