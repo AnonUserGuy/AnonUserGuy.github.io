@@ -14,7 +14,7 @@ input[type="file"] {
 }
 
 .section,
-.section-timeline {
+.section-wide {
     position: relative;
     padding: 3px;
     background-color: lightblue;
@@ -24,7 +24,7 @@ input[type="file"] {
     margin-bottom: 5px;
 }
 
-.section-timeline {
+.section-wide {
     width: 900px;
     padding-bottom: 19.92px;
     text-align: left;
@@ -71,6 +71,10 @@ abbr {
 .info {
     background-color: beige;
     margin: 16px;
+}
+
+[hidden]{
+  display:none !important;
 }
 
 

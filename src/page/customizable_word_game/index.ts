@@ -1,7 +1,7 @@
 import _dictionary from "./dictionary.json";
 
 interface WordDictionary {
-    [index: number]: [string[], string[]] | null;
+    [index: number]: [string[], string[]] | null | undefined;
 }
 
 enum WordGameState {
@@ -86,7 +86,7 @@ class WordGame {
     enforceDictionary = true;
     enforceRepeat = true;
 
-    constructor(width: number, limit: number, solution?: string, guesses?: string[][], solutions?: string[][]) {
+    constructor(width: number, limit: number, guesses?: string[][], solutions?: string[][]) {
         this.dictionary = [];
         if (guesses) {
             for (const guesses2 of guesses) {
@@ -98,11 +98,12 @@ class WordGame {
                 this.dictionary.push(solutions2);
             }
         }
+        if (this.dictionary.length < 1) {
+            this.enforceDictionary = false;
+        }
         this.limit = limit;
         this.width = width;
-        if (solution) {
-            this.solution = solution;
-        } else if (solutions) {
+        if (solutions) {
             this.solution = WordGame.randomSolution(solutions);
         } else {
             this.solution = WordGame.randomSolution(this.dictionary);
@@ -290,8 +291,11 @@ class WordGame {
 }
 
 class WordGameManager {
+    private _game?: WordGame;
+
+    active: boolean = true;
+    private _continued: boolean = false; // TODO: make this part of WordGame obj
     input: string = "";
-    game?: WordGame;
 
     board: HTMLDivElement;
     rows: HTMLDivElement[] = [];
@@ -301,7 +305,7 @@ class WordGameManager {
     keys: { [index: string]: HTMLDivElement } = {};
 
     constructor(game?: WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement) {
-        this.game = game;
+        this._game = game;
         if (!board) {
             this.board = createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
         } else {
@@ -317,8 +321,30 @@ class WordGameManager {
         this.draw();
     }
 
+    get game() {
+        return this._game;
+    }
+    set game(game: WordGame | undefined) {
+        this._game = game;
+        this.reset();
+    }
+
+    get continued() {
+        return this._continued;
+    }
+    set continued(continued: boolean) {
+        this._continued = continued;
+        this.draw();
+    }
+
+    isGameActive(): boolean {
+        return this.active && !!(this._game) 
+            && (this._game.state === WordGameState.InProgress || this._continued) 
+            && this._game.state !== WordGameState.Won;
+    }
+
     onkeydown(event: KeyboardEvent) {
-        if (!this.game) {
+        if (!this.isGameActive()) {
             return;
         }
         if (event.repeat) {
@@ -340,7 +366,7 @@ class WordGameManager {
     }
 
     type(c: string) {
-        if (this.game && (!this.game.enforceWidth || this.input.length < this.game.width)) {
+        if (this._game && (!this._game.enforceWidth || this.input.length < this._game.width)) {
             this.input += c;
             this.draw();
             return true;
@@ -349,8 +375,8 @@ class WordGameManager {
     }
 
     enter() {
-        if (this.game) {
-            const result = game.guess(this.input);
+        if (this._game) {
+            const result = this._game.guess(this.input);
             if (result === WordGameGuessResult.Valid) {
                 this.input = "";
                 this.draw();
@@ -374,19 +400,10 @@ class WordGameManager {
         this.drawKeyboard();
     }
 
-    drawKeyboard() {
-        if (!this.game) {
-            return;
-        }
-        this.game.letters.forEach((c, quality) => {
-            this.keys[c].setAttribute("data-state", (() => {
-                switch (quality) {
-                    case WordGameLetterQuality.Correct: return "correct";
-                    case WordGameLetterQuality.Present: return "present";
-                    case WordGameLetterQuality.Absent: return "absent";
-                }
-            })());
-        });
+    reset() {
+        this.resetBoard();
+        this.resetKeyboard();
+        this.draw();
     }
 
     initKeyboard() {
@@ -418,18 +435,45 @@ class WordGameManager {
         back.addEventListener("click", () => this.back());
     }
 
+    drawKeyboard() {
+        if (!this._game) {
+            this.resetKeyboard();
+            return;
+        }
+
+        if (!this.isGameActive()) {
+            this.keyboard.hidden = true;
+            return;
+        }
+        this.keyboard.hidden = false;
+
+        this._game.letters.forEach((c, quality) => {
+            this.keys[c].setAttribute("data-state", (() => {
+                switch (quality) {
+                    case WordGameLetterQuality.Correct: return "correct";
+                    case WordGameLetterQuality.Present: return "present";
+                    case WordGameLetterQuality.Absent: return "absent";
+                }
+            })());
+        });
+    }
+
+    resetKeyboard() {
+        for (const c in this.keys) {
+            this.keys[c].removeAttribute("data-state");
+        }
+    }
+
     drawBoard() {
-        if (!this.game) {
-            this.board.replaceChildren();
-            this.rows = [];
-            this.tiles = [];
+        if (!this._game) {
+            this.resetBoard();
             return;
         }
 
         let i = 0;
-        for (; i < this.game.guesses.length; i++) {
-            const guess = this.game.guesses[i];
-            const quality = this.game.qualities[i];
+        for (; i < this._game.guesses.length; i++) {
+            const guess = this._game.guesses[i];
+            const quality = this._game.qualities[i];
 
             for (let j = 0; j < guess.length; j++) {
                 const tile = this.tile(i, j);
@@ -454,12 +498,12 @@ class WordGameManager {
                 tile.setAttribute("data-state", "typing");
                 tile.scrollIntoView();
             }
-            for (; j < this.game.width; j++) {
+            for (; j < this._game.width; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = "";
                 tile.setAttribute("data-state", "empty");
             }
-            const width = Math.max(j, this.game.width);
+            const width = Math.max(j, this._game.width);
             while (tiles.length > width) {
                 const tile = tiles.pop();
                 if (tile) {
@@ -469,9 +513,24 @@ class WordGameManager {
             i++;
         }
 
-        for (; i < this.game.limit; i++) {
-            this.row(i);
+        if (this.isGameActive()) {
+            for (; i < this._game.limit; i++) {
+                this.row(i);
+            }
+        } else {
+            while (this.rows.length > this._game.guesses.length) {
+                const row = this.rows.pop();
+                if (row) {
+                    this.board.removeChild(row);
+                }
+            }
         }
+    }
+
+    resetBoard() {
+        this.board.replaceChildren();
+        this.rows = [];
+        this.tiles = [];
     }
 
     row(i: number) {
@@ -483,7 +542,7 @@ class WordGameManager {
         this.rows[i] = row;
         this.tiles[i] = [];
 
-        for (let j = 0; j < this.game!.width; j++) {
+        for (let j = 0; j < this._game!.width; j++) {
             this.initTile(i, j);
         }
         this.board.replaceChildren(...this.rows);
@@ -519,17 +578,18 @@ function randomWord(length: number) {
     return String.fromCharCode(...codes);
 }
 
-const dictionary = _dictionary as WordDictionary;
-const wordBoard = document.getElementById("wordBoard") as HTMLDivElement;
-const wordKeyboard = document.getElementById("wordKeyboard") as HTMLDivElement;
-const game = new WordGame(5, 6, randomWord(5), [dictionary[5]![0]], [dictionary[5]![1]]);
-const gameManager = new WordGameManager(game, wordBoard, wordKeyboard);
+const DICTIONARY = _dictionary as WordDictionary;
+const WORDBOARD = document.getElementById("wordBoard") as HTMLDivElement;
+const WORDKEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
+const GAME = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
+const GAMEMANAGER = new WordGameManager(GAME, WORDBOARD, WORDKEYBOARD);
+GAMEMANAGER.continued = true;
 
-window.addEventListener("keydown", (event) => gameManager.onkeydown(event));
+window.addEventListener("keydown", (event) => GAMEMANAGER.onkeydown(event));
 
-(window as any).dictionary = dictionary;
+(window as any).dictionary = DICTIONARY;
 (window as any).WordGame = WordGame;
-(window as any).game = game;
-(window as any).gameManager = gameManager;
+(window as any).game = GAME;
+(window as any).gameManager = GAMEMANAGER;
 
 export { }
