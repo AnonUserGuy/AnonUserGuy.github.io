@@ -6,13 +6,14 @@ interface WordDictionary {
 
 enum WordGameState {
     InProgress,
-    Won,
     Lost,
+    Won
 }
 
 enum WordGameGuessResult {
+    BadLimit = -4,
     BadRepeat = -3,
-    BadLength = -2,
+    BadWidth = -2,
     BadWord = -1,
     Valid = 0
 }
@@ -24,7 +25,7 @@ enum WordGameLetterQuality {
 }
 
 class LetterCounts {
-    private data: { [index: string]: number } = {};
+    private _data: { [index: string]: number } = {};
 
     constructor(word?: string) {
         if (word) {
@@ -36,36 +37,36 @@ class LetterCounts {
     }
 
     add(c: string) {
-        if (!this.data[c]) {
-            this.data[c] = 1;
+        if (!this._data[c]) {
+            this._data[c] = 1;
         } else {
-            this.data[c]++;
+            this._data[c]++;
         }
-        return this.data[c];
+        return this._data[c];
     }
 
     get(c: string) {
-        return this.data[c] || 0;
+        return this._data[c] || 0;
     }
 }
 
 class LetterQualities {
-    private data: { [index: string]: WordGameLetterQuality } = {};
+    private _data: { [index: string]: WordGameLetterQuality } = {};
 
     set(c: string, quality: WordGameLetterQuality) {
-        if (!this.data[c] || quality > this.data[c]) {
-            this.data[c] = quality;
+        if (!this._data[c] || quality > this._data[c]) {
+            this._data[c] = quality;
         }
-        return this.data[c];
+        return this._data[c];
     }
 
     get(c: string) {
-        return this.data[c];
+        return this._data[c];
     }
 
     forEach(fn: (c: string, quality: WordGameLetterQuality) => any) {
-        for (const c in this.data) {
-            fn(c, this.data[c]);
+        for (const c in this._data) {
+            fn(c, this._data[c]);
         }
     }
 }
@@ -80,11 +81,13 @@ class WordGame {
     readonly qualities: WordGameLetterQuality[][];
     readonly letters: LetterQualities;
 
-    state: WordGameState;
+    state: WordGameState = WordGameState.InProgress;
+    continuedState: WordGameState = WordGameState.InProgress;
+    gaveUp = false;
 
     enforceWidth = true;
     enforceDictionary = true;
-    enforceRepeat = true;
+    enforceRepeat = false;
 
     constructor(width: number, limit: number, guesses?: string[][], solutions?: string[][]) {
         this.dictionary = [];
@@ -92,7 +95,7 @@ class WordGame {
             for (const guesses2 of guesses) {
                 this.dictionary.push(guesses2);
             }
-        } 
+        }
         if (solutions) {
             for (const solutions2 of solutions) {
                 this.dictionary.push(solutions2);
@@ -112,7 +115,6 @@ class WordGame {
         this.guesses = [];
         this.qualities = [];
         this.letters = new LetterQualities();
-        this.state = WordGameState.InProgress;
     }
 
     dictionaryHas(word: string): boolean {
@@ -151,15 +153,21 @@ class WordGame {
         return dictionary[i][randVal];
     }
 
+    isActive(): boolean {
+        return this.state <= this.continuedState;
+    }
+
     guess(word: string) {
         word = word.toLowerCase();
 
         if (this.enforceWidth && word.length !== this.width) {
-            return WordGameGuessResult.BadLength;
+            return WordGameGuessResult.BadWidth;
         } else if (this.enforceDictionary && !this.dictionaryHas(word)) {
             return WordGameGuessResult.BadWord;
         } else if (this.enforceRepeat && this.guesses.indexOf(word) !== -1) {
             return WordGameGuessResult.BadRepeat;
+        } else if (!this.isActive()) {
+            return WordGameGuessResult.BadLimit;
         }
 
         return this.forceGuess(word);
@@ -218,7 +226,7 @@ class WordGame {
 
         if (won) {
             this.state = WordGameState.Won;
-        } else if (this.guesses.length >= this.limit) {
+        } else if (this.state !== WordGameState.Won && this.guesses.length >= this.limit) {
             this.state = WordGameState.Lost;
         }
 
@@ -236,18 +244,13 @@ class WordGame {
                 const c = guess.charAt(j);
                 const q = quality[j];
 
-                let out3: string;
-                switch (q) {
-                    case WordGameLetterQuality.Correct:
-                        out3 = `[${c}]`;
-                        break;
-                    case WordGameLetterQuality.Present:
-                        out3 = `(${c})`;
-                        break;
-                    case WordGameLetterQuality.Absent:
-                        out3 = ` ${c} `;
-                        break;
-                }
+                let out3 = (() => {
+                    switch (q) {
+                        case WordGameLetterQuality.Correct: return `[${c}]`;
+                        case WordGameLetterQuality.Present: return `(${c})`;
+                        case WordGameLetterQuality.Absent:  return ` ${c} `;
+                    }
+                })();
                 out2.push(out3);
             }
             out.push(out2.join(" "));
@@ -260,7 +263,7 @@ class WordGame {
     }
 
     toEmoji(): string {
-        let out: string[] = [];
+        let out: string[] = [`cwg ${this.state === WordGameState.Lost ? "X" : this.guesses.length}/${this.limit}`];
         for (let i = 0; i < this.guesses.length; i++) {
             const guess = this.guesses[i];
             const quality = this.qualities[i];
@@ -269,18 +272,13 @@ class WordGame {
             for (let j = 0; j < guess.length; j++) {
                 const q = quality[j];
 
-                let out3: string;
-                switch (q) {
-                    case WordGameLetterQuality.Correct:
-                        out3 = "🟩";
-                        break;
-                    case WordGameLetterQuality.Present:
-                        out3 = "🟨";
-                        break;
-                    case WordGameLetterQuality.Absent:
-                        out3 = "⬛";
-                        break;
-                }
+                let out3 = (() => {
+                    switch (q) {
+                        case WordGameLetterQuality.Correct: return "🟩";
+                        case WordGameLetterQuality.Present: return "🟨";
+                        case WordGameLetterQuality.Absent:  return "⬛";
+                    }
+                })();
                 out2.push(out3);
             }
             out.push(out2.join(""));
@@ -293,8 +291,8 @@ class WordGame {
 class WordGameManager {
     private _game?: WordGame;
 
+    isTabbed: boolean = false;
     active: boolean = true;
-    private _continued: boolean = false; // TODO: make this part of WordGame obj
     input: string = "";
 
     board: HTMLDivElement;
@@ -302,22 +300,30 @@ class WordGameManager {
     tiles: HTMLDivElement[][] = [];
 
     keyboard: HTMLDivElement;
-    keys: { [index: string]: HTMLDivElement } = {};
+    keys: { [index: string]: HTMLButtonElement } = {};
+    keyenter!: HTMLButtonElement;
+    keyback!: HTMLButtonElement;
 
-    constructor(game?: WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement) {
+    buttonContinue!: HTMLButtonElement;
+    buttonShare!: HTMLButtonElement;
+    buttonGiveUp!: HTMLButtonElement;
+    buttonNewGame!: HTMLButtonElement;
+
+    buttons: HTMLDivElement;
+
+    notifications: HTMLDivElement;
+    notificationGiveUp?: HTMLElement | null;
+
+    constructor(game?: WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement, buttons?: HTMLDivElement, notifications?: HTMLDivElement) {
         this._game = game;
-        if (!board) {
-            this.board = createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
-        } else {
-            this.board = board;
-        }
-        if (!keyboard) {
-            this.keyboard = createElementEX("div", { "class": "word-keyboard" }) as HTMLDivElement;
-        } else {
-            this.keyboard = keyboard;
-        }
+
+        this.board = board || createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
+        this.keyboard = keyboard || createElementEX("div", { "class": "word-keyboard" }) as HTMLDivElement;
+        this.buttons = buttons || createElementEX("div", { "class": "word-buttons" }) as HTMLDivElement;
+        this.notifications = notifications || createElementEX("div", {"class": "word-notifications"}) as HTMLDivElement;
 
         this.initKeyboard();
+        this.initButtons();
         this.draw();
     }
 
@@ -329,18 +335,8 @@ class WordGameManager {
         this.reset();
     }
 
-    get continued() {
-        return this._continued;
-    }
-    set continued(continued: boolean) {
-        this._continued = continued;
-        this.draw();
-    }
-
     isGameActive(): boolean {
-        return this.active && !!(this._game) 
-            && (this._game.state === WordGameState.InProgress || this._continued) 
-            && this._game.state !== WordGameState.Won;
+        return this.active && !!(this._game) && this._game.isActive();
     }
 
     onkeydown(event: KeyboardEvent) {
@@ -350,19 +346,70 @@ class WordGameManager {
         if (event.repeat) {
             return;
         }
-        const key = event.key;
+        let key = event.key;
+        let target: HTMLButtonElement;
         if (key.length === 1) {
             const code = key.charCodeAt(0);
             if (code >= 64 && code <= 90) {
-                this.type(String.fromCharCode(code + 32));
-            } else if (code >= 97 && code <= 122) {
-                this.type(key);
+                key = String.fromCharCode(code + 32);
+            } else if (!(code >= 97 && code <= 122)) {
+                return;
             }
+            this.type(key);
+            target = this.keys[key];
         } else if (key === "Backspace") {
             this.back();
+            target = this.keyback;
         } else if (key === "Enter") {
+            if (this.isTabbed) {
+                return;
+            }
             this.enter();
+            target = this.keyenter;
+            event.preventDefault();
+        } else if (key === "Tab") {
+            this.isTabbed = true;
+            return;
+        } else {
+            return;
         }
+        this.targetDown(target);
+    }
+
+    onkeyup(event: KeyboardEvent) {
+        let key = event.key;
+        let target: HTMLButtonElement;
+        if (key.length === 1) {
+            const code = key.charCodeAt(0);
+            if (code >= 64 && code <= 90) {
+                key = String.fromCharCode(code + 32);
+            } else if (!(code >= 97 && code <= 122)) {
+                return;
+            }
+            target = this.keys[key];
+        } else if (key === "Backspace") {
+            target = this.keyback;
+        } else if (key === "Enter") {
+            if (this.isTabbed) {
+                return;
+            }
+            target = this.keyenter;
+        } else {
+            return;
+        }
+        this.targetUp(target);
+    }
+
+    onmouseevent(event?: MouseEvent | TouchEvent) {
+        this.isTabbed = false;
+    }
+
+    targetDown(target: HTMLButtonElement) {
+        target.classList.add("word-key-active");
+    }
+
+    targetUp(target: HTMLButtonElement) {
+        target.classList.remove("word-key-active");
     }
 
     type(c: string) {
@@ -377,10 +424,23 @@ class WordGameManager {
     enter() {
         if (this._game) {
             const result = this._game.guess(this.input);
-            if (result === WordGameGuessResult.Valid) {
-                this.input = "";
-                this.draw();
-                return true;
+            switch (result) {
+                case WordGameGuessResult.Valid: 
+                    this.input = "";
+                    this.draw();
+                    return true;
+                case WordGameGuessResult.BadLimit:
+                    this.notify("Out of guesses");
+                    return false;
+                case WordGameGuessResult.BadRepeat:
+                    this.notify("Already guessed");
+                    return false;
+                case WordGameGuessResult.BadWidth:
+                    this.notify("Not enough letters");
+                    return false;
+                case WordGameGuessResult.BadWord:
+                    this.notify("Not in word list");
+                    return false;
             }
         }
         return false;
@@ -398,12 +458,84 @@ class WordGameManager {
     draw() {
         this.drawBoard();
         this.drawKeyboard();
+        this.drawButtons();
     }
 
     reset() {
         this.resetBoard();
         this.resetKeyboard();
+        if (this.notificationGiveUp) {
+            this.notifications.removeChild(this.notificationGiveUp);
+            this.notificationGiveUp = null;
+        }
         this.draw();
+    }
+
+    initButtons() {
+        this.buttonContinue = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["Continue"]) as HTMLButtonElement);
+        this.buttonContinue.addEventListener("click", () => this.continue());
+        this.buttonShare = this.buttons.appendChild(createElementEX("button", {"class": "word-button word-button-center"}, ["Share"]) as HTMLButtonElement);
+        this.buttonShare.addEventListener("click", () => this.share());
+        this.buttonGiveUp = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["Give Up"]) as HTMLButtonElement);
+        this.buttonGiveUp.addEventListener("click", () => this.giveUp());
+        this.buttonNewGame = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["New Game"]) as HTMLButtonElement);
+        this.buttonNewGame.addEventListener("click", () => this.newGame());
+    }
+
+    drawButtons() {
+        if (!this._game) {
+            return;
+        }
+        if (this.isGameActive() && this._game.state <= WordGameState.InProgress) {
+            this.buttons.hidden = true;
+            return;
+        }
+        this.buttons.hidden = false;
+
+        this.buttonContinue.disabled = this._game.gaveUp || this._game.continuedState >= this._game.state;
+        this.buttonGiveUp.hidden = this._game.gaveUp || this._game.state >= WordGameState.Won;
+        this.buttonNewGame.hidden = !this.buttonGiveUp.hidden;
+    }
+
+    continue() {
+        if (!this._game) {
+            return;
+        }
+        this._game.continuedState = this._game.state;
+        this.draw();
+    }
+
+    async share() {
+        if (!this._game) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(this._game.toEmoji());
+            this.notify("Copied!");
+        } catch (e) {
+            console.error(e);
+            this.notify("Failed to copy");
+        }
+    }
+
+    giveUp() {
+        if (!this._game) {
+            return;
+        }
+        this.notificationGiveUp = this.notifications.appendChild(createElementEX("p", {}, [this._game.solution.toUpperCase()]));
+        this._game.gaveUp = true;
+        this._game.continuedState = WordGameState.InProgress;
+        this.draw();
+    }
+
+    newGame() {
+        this.game = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
+    }
+
+    async notify(str: string) {
+        const notification = this.notifications.appendChild(createElementEX("p", {}, [str]));
+        await delay(1000);
+        this.notifications.removeChild(notification);
     }
 
     initKeyboard() {
@@ -411,7 +543,7 @@ class WordGameManager {
             const keyboard = (navigator as any).keyboard;
         }  */
 
-        const keys = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+        const keys = ["qwertyuiop", " asdfghjkl ", "zxcvbnm"];
 
         let row: HTMLDivElement;
         for (let i = 0; i < keys.length; i++) {
@@ -422,17 +554,22 @@ class WordGameManager {
             for (let j = 0; j < str.length; j++) {
                 const c = str.charAt(j);
 
-                const key = row.appendChild(createElementEX("div", { "class": "word-key" }, [c]) as HTMLDivElement);
-                this.keys[c] = key;
-                key.addEventListener("click", () => this.type(c));
+                if (c === " ") {
+                    row.appendChild(createElementEX("div", { "class": "word-key-space" }) as HTMLDivElement);
+                } else {
+                    const key = row.appendChild(createElementEX("button", { "class": "word-key" }, [c]) as HTMLButtonElement);
+                    this.keys[c] = key;
+                    key.addEventListener("click", () => this.type(c));
+                }
+
             }
         }
 
-        const enter = createElementEX("div", { "class": "word-key word-key-wide" }, ["⤶"]) as HTMLDivElement;
-        row!.prepend(enter);
-        enter.addEventListener("click", () => this.enter());
-        const back = row!.appendChild(createElementEX("div", { "class": "word-key word-key-wide" }, ["←"]) as HTMLDivElement);
-        back.addEventListener("click", () => this.back());
+        this.keyenter = createElementEX("button", { "class": "word-key word-key-wide" }, ["⤶"]) as HTMLButtonElement;
+        row!.prepend(this.keyenter);
+        this.keyenter.addEventListener("click", () => this.enter());
+        this.keyback = row!.appendChild(createElementEX("button", { "class": "word-key word-key-wide" }, ["🡐"]) as HTMLButtonElement);
+        this.keyback.addEventListener("click", () => this.back());
     }
 
     drawKeyboard() {
@@ -578,18 +715,27 @@ function randomWord(length: number) {
     return String.fromCharCode(...codes);
 }
 
-const DICTIONARY = _dictionary as WordDictionary;
-const WORDBOARD = document.getElementById("wordBoard") as HTMLDivElement;
-const WORDKEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
-const GAME = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
-const GAMEMANAGER = new WordGameManager(GAME, WORDBOARD, WORDKEYBOARD);
-GAMEMANAGER.continued = true;
+function delay(durationMs: number) {
+  return new Promise(resolve => setTimeout(resolve, durationMs));
+}
 
-window.addEventListener("keydown", (event) => GAMEMANAGER.onkeydown(event));
+const DICTIONARY = _dictionary as WordDictionary;
+const WORD_BOARD = document.getElementById("wordBoard") as HTMLDivElement;
+const WORD_KEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
+const WORD_BUTTONS = document.getElementById("wordButtons") as HTMLDivElement;
+const WORD_NOTIFICATIONS = document.getElementById("wordNotifications") as HTMLDivElement;
+const GAME = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
+const GAME_MANAGER = new WordGameManager(GAME, WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
+
+window.addEventListener("keydown", (event) => GAME_MANAGER.onkeydown(event));
+window.addEventListener("keyup", (event) => GAME_MANAGER.onkeyup(event));
+window.addEventListener("mousedown", (event) => GAME_MANAGER.onmouseevent(event));
+window.addEventListener("pointerdown", (event) => GAME_MANAGER.onmouseevent(event));
+window.addEventListener("touchstart", (event) => GAME_MANAGER.onmouseevent(event));
 
 (window as any).dictionary = DICTIONARY;
 (window as any).WordGame = WordGame;
 (window as any).game = GAME;
-(window as any).gameManager = GAMEMANAGER;
+(window as any).gameManager = GAME_MANAGER;
 
 export { }

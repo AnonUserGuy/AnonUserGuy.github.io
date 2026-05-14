@@ -73,8 +73,8 @@ abbr {
     margin: 16px;
 }
 
-[hidden]{
-  display:none !important;
+[hidden] {
+    display: none !important;
 }
 
 
@@ -339,7 +339,7 @@ table tr>th[colspan] {
     background-color: lightsteelblue;
     color: white;
     width: 60px;
-    aspect-ratio : 1 / 1;
+    aspect-ratio: 1 / 1;
     margin: 3px;
     justify-content: center;
     align-items: center;
@@ -373,6 +373,8 @@ table tr>th[colspan] {
 .word-keyboard {
     display: flex;
     flex-direction: column;
+    max-width: 600px;
+    margin: auto;
 }
 
 .word-keyrow {
@@ -382,6 +384,8 @@ table tr>th[colspan] {
 
 .word-key {
     display: flex;
+    font-family: "Comic Sans MS", "Comic Sans", sans-serif;
+    font-size: 1em;
     background-color: grey;
     color: white;
     width: 40px;
@@ -395,20 +399,121 @@ table tr>th[colspan] {
     -webkit-user-select: none;
     -moz-user-select: none;
     user-select: none;
+    flex: 1;
+}
+
+.word-key:hover {
+    background-color: #777;
+}
+
+.word-key:active,
+.word-key-active {
+    background-color: #666;
 }
 
 .word-key[data-state="absent"] {
     background-color: #555;
 }
 
+.word-key[data-state="absent"]:hover {
+    background-color: #444;
+}
+
+.word-key[data-state="absent"]:active,
+.word-key-active[data-state="absent"] {
+    background-color: #333;
+}
+
 .word-key[data-state="present"] {
     background-color: DarkKhaki;
+}
+
+.word-key[data-state="present"]:hover {
+    background-color: #AdA75b;
+}
+
+.word-key[data-state="present"]:active,
+.word-key-active[data-state="present"] {
+    background-color: #9d974b;
 }
 
 .word-key[data-state="correct"] {
     background-color: MediumSeaGreen;
 }
 
+.word-key[data-state="correct"]:hover {
+    background-color: #2cA361;
+}
+
+.word-key[data-state="correct"]:active,
+.word-key-active[data-state="correct"] {
+    background-color: #1c9351;
+}
+
 .word-key-wide {
-    width: 60px;
+    font-weight: bold;
+    flex: 1.5;
+}
+
+.word-key-space {
+    flex: 0.5;
+}
+
+
+.word-buttons {
+    display: flex;
+    max-width: 500px;
+    margin: auto;
+}
+
+.word-button {
+    display: flex;
+    font-family: "Comic Sans MS", "Comic Sans", sans-serif;
+    font-size: 1em;
+    background-color: grey;
+    color: white;
+    margin: 3px;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    flex: 2;
+}
+
+.word-button-center {
+    flex: 1;
+}
+
+.word-button:hover {
+    background-color: #777;
+}
+
+.word-button:active {
+    background-color: #666;
+}
+
+.word-button:disabled {
+    color: grey;
+    background-color: #555;
+    cursor: revert;
+}
+
+
+.word-notifications {
+    display: flex;
+    flex-direction: column-reverse;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.word-notifications>p {
+    background-color: white;
+    padding: 8px;
+    border-radius: 5px;
+    text-align: left;
+    margin-top: 0px;
 }
