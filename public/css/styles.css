@@ -325,13 +325,13 @@ table tr>th[colspan] {
 ### customizable_word_game ###
 */
 .word-board {
-    display: flex;
-    flex-direction: column;
+    width: fit-content;
+    max-width: 100vw;
+    margin: auto;
 }
 
 .word-row {
     display: flex;
-    justify-content: center;
 }
 
 .word-tile {

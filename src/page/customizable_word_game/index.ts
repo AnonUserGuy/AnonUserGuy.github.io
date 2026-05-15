@@ -72,9 +72,13 @@ class LetterQualities {
 }
 
 class WordGame {
-    readonly dictionary: string[][];
-    readonly limit: number;
-    readonly width: number;
+    readonly dictionary: WordDictionary;
+
+    limit: number;
+    width: number;
+    minWidth: number;
+    maxWidth: number;
+
     readonly solution: string;
     readonly letterCounts: LetterCounts;
     readonly guesses: string[];
@@ -89,27 +93,18 @@ class WordGame {
     enforceDictionary = true;
     enforceRepeat = false;
 
-    constructor(width: number, limit: number, guesses?: string[][], solutions?: string[][]) {
-        this.dictionary = [];
-        if (guesses) {
-            for (const guesses2 of guesses) {
-                this.dictionary.push(guesses2);
-            }
-        }
-        if (solutions) {
-            for (const solutions2 of solutions) {
-                this.dictionary.push(solutions2);
-            }
-        }
-        if (this.dictionary.length < 1) {
-            this.enforceDictionary = false;
-        }
+    constructor(dictionary: WordDictionary, width: number, limit: number, solution?: string) {
+        this.dictionary = dictionary;
         this.limit = limit;
         this.width = width;
-        if (solutions) {
-            this.solution = WordGame.randomSolution(solutions);
+        this.minWidth = this.width;
+        this.maxWidth = this.width;
+        if (solution) {
+            this.solution = solution;
+        } else if (this.dictionary[this.width]) {
+            this.solution = WordGame.randomSolution(this.dictionary[this.width]!);
         } else {
-            this.solution = WordGame.randomSolution(this.dictionary);
+            this.solution = "a".repeat(this.width);
         }
         this.letterCounts = new LetterCounts(this.solution);
         this.guesses = [];
@@ -118,7 +113,8 @@ class WordGame {
     }
 
     dictionaryHas(word: string): boolean {
-        return word === this.solution || this.dictionary.some(arr => WordGame.binarySearch(arr, word) !== -1);
+        return word === this.solution || 
+            !!this.dictionary[word.length] && this.dictionary[word.length]!.some(arr => WordGame.binarySearch(arr, word) !== -1);
     }
 
     static binarySearch<T>(arr: T[], x: T): number {
@@ -160,7 +156,7 @@ class WordGame {
     guess(word: string) {
         word = word.toLowerCase();
 
-        if (this.enforceWidth && word.length !== this.width) {
+        if (this.enforceWidth && (word.length < this.minWidth || word.length > this.maxWidth)) {
             return WordGameGuessResult.BadWidth;
         } else if (this.enforceDictionary && !this.dictionaryHas(word)) {
             return WordGameGuessResult.BadWord;
@@ -179,7 +175,7 @@ class WordGame {
         const letterCounts = new LetterCounts();
         const quality: WordGameLetterQuality[] = [];
 
-        let won = true;
+        let won = word.length === this.solution.length;
         for (let i = 0; i < word.length; i++) {
             const c = word.charAt(i);
 
@@ -290,6 +286,7 @@ class WordGame {
 
 class WordGameManager {
     private _game?: WordGame;
+    gameGenerator: () => WordGame;
 
     isTabbed: boolean = false;
     active: boolean = true;
@@ -314,8 +311,9 @@ class WordGameManager {
     notifications: HTMLDivElement;
     notificationGiveUp?: HTMLElement | null;
 
-    constructor(game?: WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement, buttons?: HTMLDivElement, notifications?: HTMLDivElement) {
-        this._game = game;
+    constructor(gameGenerator: () => WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement, buttons?: HTMLDivElement, notifications?: HTMLDivElement) {
+        this.gameGenerator = gameGenerator;
+        this._game = this.gameGenerator();
 
         this.board = board || createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
         this.keyboard = keyboard || createElementEX("div", { "class": "word-keyboard" }) as HTMLDivElement;
@@ -413,7 +411,7 @@ class WordGameManager {
     }
 
     type(c: string) {
-        if (this._game && (!this._game.enforceWidth || this.input.length < this._game.width)) {
+        if (this._game && (!this._game.enforceWidth || this.input.length < this._game.maxWidth)) {
             this.input += c;
             this.draw();
             return true;
@@ -529,7 +527,7 @@ class WordGameManager {
     }
 
     newGame() {
-        this.game = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
+        this.game = this.gameGenerator();
     }
 
     async notify(str: string) {
@@ -719,23 +717,28 @@ function delay(durationMs: number) {
   return new Promise(resolve => setTimeout(resolve, durationMs));
 }
 
+function newGame() {
+    const game = new WordGame(DICTIONARY, 5, 6, WordGame.randomSolution([DICTIONARY[5]![1], DICTIONARY[6]![1], DICTIONARY[7]![1]]));
+    game.minWidth = 5;
+    game.maxWidth = 7;
+    return game;
+}
+
 const DICTIONARY = _dictionary as WordDictionary;
 const WORD_BOARD = document.getElementById("wordBoard") as HTMLDivElement;
 const WORD_KEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
 const WORD_BUTTONS = document.getElementById("wordButtons") as HTMLDivElement;
 const WORD_NOTIFICATIONS = document.getElementById("wordNotifications") as HTMLDivElement;
-const GAME = new WordGame(5, 6, [DICTIONARY[5]![0], DICTIONARY[5]![1]], [[randomWord(5)]]);
-const GAME_MANAGER = new WordGameManager(GAME, WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
+const MANAGER = new WordGameManager(newGame, WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
 
-window.addEventListener("keydown", (event) => GAME_MANAGER.onkeydown(event));
-window.addEventListener("keyup", (event) => GAME_MANAGER.onkeyup(event));
-window.addEventListener("mousedown", (event) => GAME_MANAGER.onmouseevent(event));
-window.addEventListener("pointerdown", (event) => GAME_MANAGER.onmouseevent(event));
-window.addEventListener("touchstart", (event) => GAME_MANAGER.onmouseevent(event));
+window.addEventListener("keydown", (event) => MANAGER.onkeydown(event));
+window.addEventListener("keyup", (event) => MANAGER.onkeyup(event));
+window.addEventListener("mousedown", (event) => MANAGER.onmouseevent(event));
+window.addEventListener("pointerdown", (event) => MANAGER.onmouseevent(event));
+window.addEventListener("touchstart", (event) => MANAGER.onmouseevent(event));
 
 (window as any).dictionary = DICTIONARY;
 (window as any).WordGame = WordGame;
-(window as any).game = GAME;
-(window as any).gameManager = GAME_MANAGER;
+(window as any).manager = MANAGER;
 
 export { }
