@@ -2,6 +2,10 @@ interface Attributes {
     [key: string]: string;
 }
 
+interface RandomNumberGenerator {
+    (): number;
+}
+
 function promiseFileAsText(file: File): Promise<string | null> {
     const reader = new FileReader();
 
@@ -103,4 +107,25 @@ function loading(bool: boolean) {
     }
 }
 
-Object.assign(window, { promiseFileAsText, promiseFileAsArrayBuffer, download, createElementEX, dotEl, loadingEl, loading })
+function delay(durationMs: number) {
+    return new Promise(resolve => setTimeout(resolve, durationMs));
+}
+
+// TSH taken from https://stackoverflow.com/a/52171480
+const tsh = (s: string) => { for (var i = 0, h = 9; i < s.length;)h = Math.imul(h ^ s.charCodeAt(i++), 9 ** 9); return h ^ h >>> 9 }
+
+function random(seed?: string | number): RandomNumberGenerator {
+    if (typeof seed === "string") {
+        seed = tsh(seed);
+    } else if (typeof seed === "undefined") {
+        seed = Math.random();
+    }
+    return () => {
+        let t = ((seed as number) += 0x6D2B79F5);
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+Object.assign(window, { promiseFileAsText, promiseFileAsArrayBuffer, download, createElementEX, dotEl, loadingEl, loading, delay, tsh, random });

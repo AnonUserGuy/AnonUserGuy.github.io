@@ -102,7 +102,7 @@ class WordGame {
         if (solution) {
             this.solution = solution;
         } else if (this.dictionary[this.width]) {
-            this.solution = WordGame.randomSolution(this.dictionary[this.width]!);
+            this.solution = WordGameGenerator.randomDictionaryWord(this.dictionary[this.width]!);
         } else {
             this.solution = "a".repeat(this.width);
         }
@@ -134,19 +134,6 @@ class WordGame {
             }
         }
         return -1;
-    }
-
-    static randomSolution(dictionary: string[][]): string {
-        const total = dictionary.reduce(((acc, arr) => acc + arr.length), 0);
-        let randVal = Math.floor(Math.random() * total);
-
-        let i = 0;
-        while (randVal > dictionary[i].length) {
-            randVal -= dictionary[i].length;
-            i++;
-        }
-
-        return dictionary[i][randVal];
     }
 
     isActive(): boolean {
@@ -705,31 +692,141 @@ class WordGameManager {
     }
 }
 
-function randomWord(length: number) {
-    const codes: number[] = [];
-    for (let i = 0; i < length; i++) {
-        codes.push(Math.floor(97 + Math.random() * 26));
+enum SeedType {
+    Today,
+    Random,
+    Fixed
+}
+
+class WordGameGenerator {
+    dictionary: WordDictionary;
+    private url: URL;
+    private initialSeed?: string;
+    private extraSeed?: number;
+    editing: boolean = true;
+
+    seedType: SeedType = SeedType.Today;
+    fixedSeed: string = "";
+    width: number = 5;
+    limit: number = 6;
+
+    constructor(dictionary: WordDictionary) {
+        this.dictionary = dictionary;
+
+        this.url = new URL(window.location.href);
+
+        if (this.url.searchParams.has("o")) {
+            this.setOptions(this.url.searchParams.get("o")!);
+            
+            if (!this.url.searchParams.has("edit")) {
+                this.editing = false;
+            }
+        }
     }
-    return String.fromCharCode(...codes);
-}
 
-function delay(durationMs: number) {
-  return new Promise(resolve => setTimeout(resolve, durationMs));
-}
+    initRng() {
+        if (this.url.searchParams.has("s")) {
 
-function newGame() {
-    const game = new WordGame(DICTIONARY, 5, 6, WordGame.randomSolution([DICTIONARY[5]![1], DICTIONARY[6]![1], DICTIONARY[7]![1]]));
-    game.minWidth = 5;
-    game.maxWidth = 7;
-    return game;
+            const reg = /^(.*)_(\d+)$/;
+            const s = this.url.searchParams.get("s")!;
+            const match = s.match(reg);
+
+            if (match) {
+                this.initialSeed = match[1];
+                this.extraSeed = parseInt(match[2]) - 1;
+            } else {
+                this.initialSeed = s;
+                this.extraSeed = -1;
+            }
+            return;
+
+        } 
+        this.extraSeed = -1;
+        switch (this.seedType) {
+            case SeedType.Today:
+                const start = new Date(2026, 4, 15);
+                const today = new Date();
+                const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                
+                this.initialSeed = diff.toString();
+                break;
+            case SeedType.Random:
+                this.initialSeed = WordGameGenerator.randomWord(5);
+                break;
+            case SeedType.Fixed:
+                this.initialSeed = this.fixedSeed;
+                break;
+        }
+    }
+
+    getRng() {
+        if (!this.initialSeed) {
+            this.initRng();
+        }
+        this.extraSeed!++;
+        const seed = this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
+        this.url.searchParams.set("s", seed);
+        window.history.pushState({}, '', this.url.toString());
+        
+        return random(seed);
+    }
+
+    newGame() {
+        const game = new WordGame(this.dictionary, 5, 6, WordGameGenerator.randomWord(5, this.getRng()));
+        return game;
+    }
+
+    getOptions(): string {
+        return "";
+    }
+    
+    setOptions(options: string) {
+
+    }
+
+    static randomWord(length: number, random: RandomNumberGenerator = Math.random) {
+        const codes: number[] = [];
+        for (let i = 0; i < length; i++) {
+            codes.push(Math.floor(97 + random() * 26));
+        }
+        return String.fromCharCode(...codes);
+    }
+    
+    static randomDictionaryWord(dictionary: string[][], random: RandomNumberGenerator = Math.random): string {
+        const total = dictionary.reduce(((acc, arr) => acc + arr.length), 0);
+        let randVal = Math.floor(random() * total);
+
+        let i = 0;
+        while (randVal > dictionary[i].length) {
+            randVal -= dictionary[i].length;
+            i++;
+        }
+
+        return dictionary[i][randVal];
+    }
 }
 
 const DICTIONARY = _dictionary as WordDictionary;
+
+const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement; 
+const FORM_WIDTH = document.getElementById("formWidth") as HTMLInputElement; 
+const FORM_LIMIT = document.getElementById("formLimit") as HTMLInputElement; 
+const FORM = document.getElementById("form") as HTMLFormElement; 
+const GENERATOR = new WordGameGenerator(DICTIONARY);
+
+FORM.addEventListener("submit", (event) => {
+    event.preventDefault();
+    GENERATOR.width = parseInt(FORM_WIDTH.value);
+    GENERATOR.limit = parseInt(FORM_LIMIT.value);
+    
+});
+
+const WORD_SECTION = document.getElementById("wordSection") as HTMLDivElement;
 const WORD_BOARD = document.getElementById("wordBoard") as HTMLDivElement;
 const WORD_KEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
 const WORD_BUTTONS = document.getElementById("wordButtons") as HTMLDivElement;
 const WORD_NOTIFICATIONS = document.getElementById("wordNotifications") as HTMLDivElement;
-const MANAGER = new WordGameManager(newGame, WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
+const MANAGER = new WordGameManager(() => GENERATOR.newGame(), WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
 
 window.addEventListener("keydown", (event) => MANAGER.onkeydown(event));
 window.addEventListener("keyup", (event) => MANAGER.onkeyup(event));

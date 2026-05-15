@@ -25,10 +25,35 @@
     <div>
         <a href="/">&lt-- go back</a>
     </div>
-    <div id="wordNotifications" class="word-notifications"></div>
-    <div id="wordBoard" class="word-board"></div>
-    <div id="wordKeyboard" class="word-keyboard"></div>
-    <div id="wordButtons" class="word-buttons" hidden></div>
+
+    <div class="section" id="formSection" hidden>
+        <h2>Customizable Word Game</h2>
+        <form id="form">
+            <p><label for="formWidth">Word width: </label><input type="number" id="formWidth" min="0" max="18" value="5"></p>
+            <p><label for="formLimit">Guess limit: </label><input type="number" id="formLimit" min="1" max="999" value="6"></p>
+            <div class="selector">
+                <p>
+                    <input type="radio" id="formSeedDaily" name="seed" value="0" checked>
+                    <label for="formSeedDaily">Daily</label>
+                </p>
+                <p>
+                    <input type="radio" id="formSeedRandom" name="seed" value="1">
+                    <label for="formSeedRandom">Random</label>
+                </p>
+            </div>
+            <p>
+                <input type="submit" id="submit" name="submit" value="Word Game me!">
+            </p>
+        </form>
+    </div>
+
+    <div id="wordSection">
+        <div id="wordNotifications" class="word-notifications"></div>
+        <div id="wordBoard" class="word-board"></div>
+        <div id="wordKeyboard" class="word-keyboard"></div>
+        <div id="wordButtons" class="word-buttons" hidden></div>
+    </div>
+
 </body>
 
 </html>

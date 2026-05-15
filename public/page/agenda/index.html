@@ -19,10 +19,6 @@
             background-blend-mode: screen;
             background-position: top;
         }
-        input[type="submit"] {
-            width: 50%;
-            height: 3em;
-        }
 
         .i {
             text-indent: 50px;
@@ -83,14 +79,13 @@
     </div>
 
     <script>
-        TSH = s => { for (var i = 0, h = 9; i < s.length;)h = Math.imul(h ^ s.charCodeAt(i++), 9 ** 9); return h ^ h >>> 9 }
         const form = document.getElementById("form");
         const entry = document.getElementById("entry");
         const contents = document.getElementById("contents");
         form.addEventListener("submit", (event) => {
             event.preventDefault();
             const password = event.currentTarget.password.value.toLowerCase().trim();
-            const hashed = TSH(password);
+            const hashed = tsh(password);
             if (hashed === -720125209) {
                 event.currentTarget.password.disabled = true;
                 event.currentTarget.submit.disabled = true;
