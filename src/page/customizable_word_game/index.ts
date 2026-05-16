@@ -605,6 +605,10 @@ class WordGameManager {
             const guess = this._game.guesses[i];
             const quality = this._game.qualities[i];
 
+            if (!guess) {
+                this.row(i);
+                continue;
+            }
             for (let j = 0; j < guess.length; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = guess.charAt(j);
@@ -621,12 +625,16 @@ class WordGameManager {
         if (this.input || this.rows[i]) {
             const row = this.row(i);
             const tiles = this.tiles[i];
+            let shouldScroll = true;
             let j = 0;
             for (; j < this.input.length; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = this.input.charAt(j);
                 tile.setAttribute("data-state", "typing");
-                tile.scrollIntoView();
+                if (shouldScroll) {
+                    shouldScroll = false;
+                    this.scrollTileIntoView(tile);
+                }
             }
             for (; j < this._game.width; j++) {
                 const tile = this.tile(i, j);
@@ -697,6 +705,21 @@ class WordGameManager {
         this.rows[i].replaceChildren(...this.tiles[i]);
 
         return tile;
+    }
+
+    scrollTileIntoView(tile: HTMLDivElement) {
+        const rect = tile.getBoundingClientRect();
+        if (rect.y < 0) {
+            window.scrollBy(0, rect.y);
+            return;
+        }
+        const bottom = rect.y + rect.height;
+        const space = window.innerHeight - this.keyboard.offsetHeight;
+        const diff = bottom - space;
+        
+        if (diff > 0) {
+            window.scrollBy(0, diff);
+        }
     }
 }
 

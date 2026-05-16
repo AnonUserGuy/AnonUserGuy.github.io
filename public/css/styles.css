@@ -381,6 +381,9 @@ table tr>th[colspan] {
     flex-direction: column;
     max-width: 600px;
     margin: auto;
+    position: sticky;
+    bottom: 0px;
+    background-color: powderblue;
 }
 
 .word-keyrow {

@@ -2,12 +2,24 @@
 <html>
 
 <head>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body>
+    <a href="/customizable_word_game/" id="link" hidden>Customizable Word Game</a>
+
     <script>
         const url = new URL(window.location.href);
-        window.location.replace("/customizable_word_game/" + url.search);
+        const target = "/customizable_word_game/" + url.search;
+        const link = document.getElementById("link");
+
+        window.location.replace(target);
+
+        link.href = target;
+
+        setTimeout(() => {
+            link.hidden = false;
+        }, 1000)
     </script>
 </body>
 
