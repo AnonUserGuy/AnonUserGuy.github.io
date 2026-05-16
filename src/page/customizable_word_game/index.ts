@@ -246,7 +246,7 @@ class WordGame {
     }
 
     toEmoji(): string {
-        let out: string[] = [`cwg ${this.state === WordGameState.Lost ? "X" : this.guesses.length}/${this.limit}`];
+        let out: string[] = [`${window.location.href}\n===== ${this.state === WordGameState.Lost ? "X" : this.guesses.length}/${this.limit} =====`];
         for (let i = 0; i < this.guesses.length; i++) {
             const guess = this.guesses[i];
             const quality = this.qualities[i];
@@ -731,7 +731,7 @@ class WordGameGenerator {
         this.extraSeed!++;
         const seed = this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
 
-        if (this.seedType !== SeedType.Daily || this.extraSeed !== 0) {
+        if (true || this.seedType !== SeedType.Daily || this.extraSeed !== 0) {
             const url = new URL(window.location.href);
             url.searchParams.set("s", seed);
             window.history.replaceState({}, '', url.toString());
