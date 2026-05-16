@@ -99,7 +99,7 @@ class WordGame {
         this.width = width;
         this.minWidth = this.width;
         this.maxWidth = this.width;
-        if (solution) {
+        if (solution !== undefined) {
             this.solution = solution;
         } else if (this.dictionary[this.width]) {
             this.solution = WordGameGenerator.randomDictionaryWord(this.dictionary[this.width]!);
@@ -113,7 +113,7 @@ class WordGame {
     }
 
     dictionaryHas(word: string): boolean {
-        return word === this.solution || 
+        return word === this.solution ||
             !!this.dictionary[word.length] && this.dictionary[word.length]!.some(arr => WordGame.binarySearch(arr, word) !== -1);
     }
 
@@ -231,7 +231,7 @@ class WordGame {
                     switch (q) {
                         case WordGameLetterQuality.Correct: return `[${c}]`;
                         case WordGameLetterQuality.Present: return `(${c})`;
-                        case WordGameLetterQuality.Absent:  return ` ${c} `;
+                        case WordGameLetterQuality.Absent: return ` ${c} `;
                     }
                 })();
                 out2.push(out3);
@@ -259,7 +259,7 @@ class WordGame {
                     switch (q) {
                         case WordGameLetterQuality.Correct: return "🟩";
                         case WordGameLetterQuality.Present: return "🟨";
-                        case WordGameLetterQuality.Absent:  return "⬛";
+                        case WordGameLetterQuality.Absent: return "⬛";
                     }
                 })();
                 out2.push(out3);
@@ -276,7 +276,7 @@ class WordGameManager {
     gameGenerator: () => WordGame;
 
     isTabbed: boolean = false;
-    active: boolean = true;
+    active: boolean = false;
     input: string = "";
 
     board: HTMLDivElement;
@@ -300,12 +300,18 @@ class WordGameManager {
 
     constructor(gameGenerator: () => WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement, buttons?: HTMLDivElement, notifications?: HTMLDivElement) {
         this.gameGenerator = gameGenerator;
-        this._game = this.gameGenerator();
+        //this._game = this.gameGenerator();
 
         this.board = board || createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
         this.keyboard = keyboard || createElementEX("div", { "class": "word-keyboard" }) as HTMLDivElement;
         this.buttons = buttons || createElementEX("div", { "class": "word-buttons" }) as HTMLDivElement;
-        this.notifications = notifications || createElementEX("div", {"class": "word-notifications"}) as HTMLDivElement;
+        this.notifications = notifications || createElementEX("div", { "class": "word-notifications" }) as HTMLDivElement;
+
+        window.addEventListener("keydown", (event) => this.keyDown(event));
+        window.addEventListener("keyup", (event) => this.keyUp(event));
+        window.addEventListener("mousedown", (event) => this.mouseEvent(event));
+        window.addEventListener("pointerdown", (event) => this.mouseEvent(event));
+        window.addEventListener("touchstart", (event) => this.mouseEvent(event));
 
         this.initKeyboard();
         this.initButtons();
@@ -324,7 +330,7 @@ class WordGameManager {
         return this.active && !!(this._game) && this._game.isActive();
     }
 
-    onkeydown(event: KeyboardEvent) {
+    keyDown(event: KeyboardEvent) {
         if (!this.isGameActive()) {
             return;
         }
@@ -361,7 +367,7 @@ class WordGameManager {
         this.targetDown(target);
     }
 
-    onkeyup(event: KeyboardEvent) {
+    keyUp(event: KeyboardEvent) {
         let key = event.key;
         let target: HTMLButtonElement;
         if (key.length === 1) {
@@ -385,7 +391,7 @@ class WordGameManager {
         this.targetUp(target);
     }
 
-    onmouseevent(event?: MouseEvent | TouchEvent) {
+    mouseEvent(event?: MouseEvent | TouchEvent) {
         this.isTabbed = false;
     }
 
@@ -410,7 +416,7 @@ class WordGameManager {
         if (this._game) {
             const result = this._game.guess(this.input);
             switch (result) {
-                case WordGameGuessResult.Valid: 
+                case WordGameGuessResult.Valid:
                     this.input = "";
                     this.draw();
                     return true;
@@ -457,13 +463,13 @@ class WordGameManager {
     }
 
     initButtons() {
-        this.buttonContinue = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["Continue"]) as HTMLButtonElement);
+        this.buttonContinue = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["Continue"]) as HTMLButtonElement);
         this.buttonContinue.addEventListener("click", () => this.continue());
-        this.buttonShare = this.buttons.appendChild(createElementEX("button", {"class": "word-button word-button-center"}, ["Share"]) as HTMLButtonElement);
+        this.buttonShare = this.buttons.appendChild(createElementEX("button", { "class": "word-button word-button-center" }, ["Share"]) as HTMLButtonElement);
         this.buttonShare.addEventListener("click", () => this.share());
-        this.buttonGiveUp = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["Give Up"]) as HTMLButtonElement);
+        this.buttonGiveUp = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["Give Up"]) as HTMLButtonElement);
         this.buttonGiveUp.addEventListener("click", () => this.giveUp());
-        this.buttonNewGame = this.buttons.appendChild(createElementEX("button", {"class": "word-button"}, ["New Game"]) as HTMLButtonElement);
+        this.buttonNewGame = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["New Game"]) as HTMLButtonElement);
         this.buttonNewGame.addEventListener("click", () => this.newGame());
     }
 
@@ -693,95 +699,148 @@ class WordGameManager {
 }
 
 enum SeedType {
-    Today,
+    Daily,
     Random,
     Fixed
 }
 
+enum Difficulty {
+    Normal,
+    Hard,
+    Impossible
+}
+
 class WordGameGenerator {
     dictionary: WordDictionary;
-    private url: URL;
-    private initialSeed?: string;
-    private extraSeed?: number;
-    editing: boolean = true;
+    private initialSeed: string = "";
+    private extraSeed: number = -1;
 
-    seedType: SeedType = SeedType.Today;
-    fixedSeed: string = "";
+    seedType: SeedType = SeedType.Daily;
+    difficulty: Difficulty = Difficulty.Normal;
     width: number = 5;
     limit: number = 6;
 
-    constructor(dictionary: WordDictionary) {
+    constructor(dictionary: WordDictionary, initialParams?: URLSearchParams) {
         this.dictionary = dictionary;
-
-        this.url = new URL(window.location.href);
-
-        if (this.url.searchParams.has("o")) {
-            this.setOptions(this.url.searchParams.get("o")!);
-            
-            if (!this.url.searchParams.has("edit")) {
-                this.editing = false;
-            }
-        }
-    }
-
-    initRng() {
-        if (this.url.searchParams.has("s")) {
-
-            const reg = /^(.*)_(\d+)$/;
-            const s = this.url.searchParams.get("s")!;
-            const match = s.match(reg);
-
-            if (match) {
-                this.initialSeed = match[1];
-                this.extraSeed = parseInt(match[2]) - 1;
-            } else {
-                this.initialSeed = s;
-                this.extraSeed = -1;
-            }
-            return;
-
-        } 
-        this.extraSeed = -1;
-        switch (this.seedType) {
-            case SeedType.Today:
-                const start = new Date(2026, 4, 15);
-                const today = new Date();
-                const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-                
-                this.initialSeed = diff.toString();
-                break;
-            case SeedType.Random:
-                this.initialSeed = WordGameGenerator.randomWord(5);
-                break;
-            case SeedType.Fixed:
-                this.initialSeed = this.fixedSeed;
-                break;
+        if (initialParams) {
+            WordGameGenerator.validateParams(initialParams);
         }
     }
 
     getRng() {
-        if (!this.initialSeed) {
-            this.initRng();
-        }
         this.extraSeed!++;
         const seed = this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
-        this.url.searchParams.set("s", seed);
-        window.history.pushState({}, '', this.url.toString());
-        
+
+        if (this.seedType !== SeedType.Daily || this.extraSeed !== 0) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("s", seed);
+            window.history.replaceState({}, '', url.toString());
+        }
+
         return random(seed);
     }
 
     newGame() {
-        const game = new WordGame(this.dictionary, 5, 6, WordGameGenerator.randomWord(5, this.getRng()));
+        const rng = this.getRng();
+        let word = (() => {
+            switch (this.difficulty) {
+                case Difficulty.Normal: return WordGameGenerator.randomDictionaryWord([this.dictionary[this.width]![1]], rng);
+                case Difficulty.Hard: return WordGameGenerator.randomDictionaryWord(this.dictionary[this.width]!, rng);
+                case Difficulty.Impossible: return WordGameGenerator.randomWord(this.width, rng);
+            }
+        })();
+
+        const game = new WordGame(this.dictionary, this.width, this.limit, word);
         return game;
     }
 
-    getOptions(): string {
-        return "";
-    }
-    
-    setOptions(options: string) {
+    setParams(params: URLSearchParams) {
+        let modified = false;
 
+        if (params.has("w")) this.width = parseInt(params.get("w") as string);
+        if (params.has("l")) this.limit = parseInt(params.get("l") as string);
+        if (params.has("d")) {
+            switch (params.get("d") as string) {
+                case "normal":
+                    this.difficulty = Difficulty.Normal;
+                    break;
+                case "hard":
+                    this.difficulty = Difficulty.Hard;
+                    break;
+                case "impossible":
+                    this.difficulty = Difficulty.Impossible;
+                    break;
+            }
+        }
+
+        if (params.has("seed")) {
+            switch (params.get("seed") as string) {
+                case "daily":
+                    this.setDailySeed();
+
+                    if (params.has("s")) {
+                        params.delete("s");
+                        modified = true;
+                    }
+                    break;
+                case "random":
+                    this.setRandomSeed();
+
+                    params.set("s", this.initialSeed);
+                    modified = true;
+                    break;
+                default:
+                    if (params.has("s")) {
+                        this.setFixedSeed(params.get("s")!);
+                    } else {
+                        this.setDailySeed();
+                    }
+                    break;
+            }
+        }
+        return modified;
+    }
+
+    static validateParams(params: URLSearchParams) {
+        let modified = false;
+        if (params.has("s")) {
+            if (!params.has("seed") || params.get("seed")! !== "fixed") {
+                params.set("seed", "fixed");
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    setDailySeed() {
+        this.seedType = SeedType.Daily;
+        const start = new Date(2026, 4, 15);
+        const today = new Date();
+        const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+        this.initialSeed = diff.toString();
+        this.extraSeed = -1;
+    }
+
+    setRandomSeed() {
+        this.seedType = SeedType.Random;
+        this.initialSeed = WordGameGenerator.randomWord(5);
+        this.extraSeed = -1;
+    }
+
+    setFixedSeed(s: string) {
+        this.seedType = SeedType.Fixed;
+        
+        const reg = /^(.*)_(\d+)$/;
+        const match = s.match(reg);
+
+        if (match) {
+            this.initialSeed = match[1];
+            this.extraSeed = parseInt(match[2]) - 1;
+        } else {
+            this.initialSeed = s;
+            this.extraSeed = -1;
+        }
     }
 
     static randomWord(length: number, random: RandomNumberGenerator = Math.random) {
@@ -791,7 +850,7 @@ class WordGameGenerator {
         }
         return String.fromCharCode(...codes);
     }
-    
+
     static randomDictionaryWord(dictionary: string[][], random: RandomNumberGenerator = Math.random): string {
         const total = dictionary.reduce(((acc, arr) => acc + arr.length), 0);
         let randVal = Math.floor(random() * total);
@@ -806,36 +865,54 @@ class WordGameGenerator {
     }
 }
 
-const DICTIONARY = _dictionary as WordDictionary;
+function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
+    for(const [key, val] of params) {
+        if (form.elements[key as any]) {
+            const input = form.elements[key as any] as HTMLInputElement;
+            switch(input.type) {
+                case 'checkbox': input.checked = !!val; break;
+                default:         input.value = val;     break;
+            }
+        }
+    }
+}
 
-const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement; 
-const FORM_WIDTH = document.getElementById("formWidth") as HTMLInputElement; 
-const FORM_LIMIT = document.getElementById("formLimit") as HTMLInputElement; 
-const FORM = document.getElementById("form") as HTMLFormElement; 
-const GENERATOR = new WordGameGenerator(DICTIONARY);
+const INITIAL_URL = new URL(window.location.href);
+const INITIAL_PARAMS = INITIAL_URL.searchParams;
+
+const DICTIONARY = _dictionary as WordDictionary;
+const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement;
+const FORM = document.getElementById("form") as HTMLFormElement;
+const GENERATOR = new WordGameGenerator(DICTIONARY, INITIAL_PARAMS);
+formDeserialize(FORM, INITIAL_PARAMS);
 
 FORM.addEventListener("submit", (event) => {
     event.preventDefault();
-    GENERATOR.width = parseInt(FORM_WIDTH.value);
-    GENERATOR.limit = parseInt(FORM_LIMIT.value);
+    const formData = new FormData(event.target as HTMLFormElement);
+    const params = new URLSearchParams(formData as any);
+
+    GENERATOR.setParams(params);
+
+    const url = new URL(window.location.href);
+    url.search = params.toString();
+    window.history.replaceState({}, '', url.toString());
     
-});
+    FORM_SECTION.hidden = true;
+    WORD_SECTION.hidden = false;
+    MANAGER.active = true;
+    MANAGER.newGame();
+})
 
 const WORD_SECTION = document.getElementById("wordSection") as HTMLDivElement;
 const WORD_BOARD = document.getElementById("wordBoard") as HTMLDivElement;
 const WORD_KEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
 const WORD_BUTTONS = document.getElementById("wordButtons") as HTMLDivElement;
 const WORD_NOTIFICATIONS = document.getElementById("wordNotifications") as HTMLDivElement;
-const MANAGER = new WordGameManager(() => GENERATOR.newGame(), WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
-
-window.addEventListener("keydown", (event) => MANAGER.onkeydown(event));
-window.addEventListener("keyup", (event) => MANAGER.onkeyup(event));
-window.addEventListener("mousedown", (event) => MANAGER.onmouseevent(event));
-window.addEventListener("pointerdown", (event) => MANAGER.onmouseevent(event));
-window.addEventListener("touchstart", (event) => MANAGER.onmouseevent(event));
+const MANAGER: WordGameManager = new WordGameManager(() => GENERATOR.newGame(), WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
 
 (window as any).dictionary = DICTIONARY;
 (window as any).WordGame = WordGame;
+(window as any).generator = GENERATOR;
 (window as any).manager = MANAGER;
 
 export { }
