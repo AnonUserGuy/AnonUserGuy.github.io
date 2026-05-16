@@ -4,13 +4,13 @@ interface WordDictionary {
     [index: number]: [string[], string[]] | null | undefined;
 }
 
-enum WordGameState {
+enum State {
     InProgress,
     Lost,
     Won
 }
 
-enum WordGameGuessResult {
+enum GuessResult {
     BadLimit = -4,
     BadRepeat = -3,
     BadWidth = -2,
@@ -18,7 +18,7 @@ enum WordGameGuessResult {
     Valid = 0
 }
 
-enum WordGameLetterQuality {
+enum LetterQuality {
     Absent,
     Present,
     Correct
@@ -51,9 +51,9 @@ class LetterCounts {
 }
 
 class LetterQualities {
-    private _data: { [index: string]: WordGameLetterQuality } = {};
+    private _data: { [index: string]: LetterQuality } = {};
 
-    set(c: string, quality: WordGameLetterQuality) {
+    set(c: string, quality: LetterQuality) {
         if (!this._data[c] || quality > this._data[c]) {
             this._data[c] = quality;
         }
@@ -64,7 +64,7 @@ class LetterQualities {
         return this._data[c];
     }
 
-    forEach(fn: (c: string, quality: WordGameLetterQuality) => any) {
+    forEach(fn: (c: string, quality: LetterQuality) => any) {
         for (const c in this._data) {
             fn(c, this._data[c]);
         }
@@ -82,11 +82,11 @@ class WordGame {
     readonly solution: string;
     readonly letterCounts: LetterCounts;
     readonly guesses: string[];
-    readonly qualities: WordGameLetterQuality[][];
+    readonly qualities: LetterQuality[][];
     readonly letters: LetterQualities;
 
-    state: WordGameState = WordGameState.InProgress;
-    continuedState: WordGameState = WordGameState.InProgress;
+    state: State = State.InProgress;
+    continuedState: State = State.InProgress;
     gaveUp = false;
 
     enforceWidth = true;
@@ -144,13 +144,13 @@ class WordGame {
         word = word.toLowerCase();
 
         if (this.enforceWidth && (word.length < this.minWidth || word.length > this.maxWidth)) {
-            return WordGameGuessResult.BadWidth;
+            return GuessResult.BadWidth;
         } else if (this.enforceDictionary && !this.dictionaryHas(word)) {
-            return WordGameGuessResult.BadWord;
+            return GuessResult.BadWord;
         } else if (this.enforceRepeat && this.guesses.indexOf(word) !== -1) {
-            return WordGameGuessResult.BadRepeat;
+            return GuessResult.BadRepeat;
         } else if (!this.isActive()) {
-            return WordGameGuessResult.BadLimit;
+            return GuessResult.BadLimit;
         }
 
         return this.forceGuess(word);
@@ -160,15 +160,15 @@ class WordGame {
         word = word.toLowerCase();
 
         const letterCounts = new LetterCounts();
-        const quality: WordGameLetterQuality[] = [];
+        const quality: LetterQuality[] = [];
 
         let won = word.length === this.solution.length;
         for (let i = 0; i < word.length; i++) {
             const c = word.charAt(i);
 
             if (this.solution.charAt(i) === c) {
-                quality[i] = WordGameLetterQuality.Correct;
-                this.letters.set(c, WordGameLetterQuality.Correct);
+                quality[i] = LetterQuality.Correct;
+                this.letters.set(c, LetterQuality.Correct);
             } else {
                 won = false;
                 const guessCount = letterCounts.get(c);
@@ -190,16 +190,16 @@ class WordGame {
                         }
                     }
                     if (futureHasCorrect) {
-                        quality[i] = WordGameLetterQuality.Absent;
-                        this.letters.set(c, WordGameLetterQuality.Absent);
+                        quality[i] = LetterQuality.Absent;
+                        this.letters.set(c, LetterQuality.Absent);
                     } else {
-                        quality[i] = WordGameLetterQuality.Present;
-                        this.letters.set(c, WordGameLetterQuality.Present);
+                        quality[i] = LetterQuality.Present;
+                        this.letters.set(c, LetterQuality.Present);
                     }
 
                 } else {
-                    quality[i] = WordGameLetterQuality.Absent;
-                    this.letters.set(c, WordGameLetterQuality.Absent);
+                    quality[i] = LetterQuality.Absent;
+                    this.letters.set(c, LetterQuality.Absent);
                 }
             }
             letterCounts.add(c);
@@ -208,12 +208,12 @@ class WordGame {
         this.qualities.push(quality);
 
         if (won) {
-            this.state = WordGameState.Won;
-        } else if (this.state !== WordGameState.Won && this.guesses.length >= this.limit) {
-            this.state = WordGameState.Lost;
+            this.state = State.Won;
+        } else if (this.state !== State.Won && this.guesses.length >= this.limit) {
+            this.state = State.Lost;
         }
 
-        return WordGameGuessResult.Valid;
+        return GuessResult.Valid;
     }
 
     toString(): string {
@@ -229,9 +229,9 @@ class WordGame {
 
                 let out3 = (() => {
                     switch (q) {
-                        case WordGameLetterQuality.Correct: return `[${c}]`;
-                        case WordGameLetterQuality.Present: return `(${c})`;
-                        case WordGameLetterQuality.Absent: return ` ${c} `;
+                        case LetterQuality.Correct: return `[${c}]`;
+                        case LetterQuality.Present: return `(${c})`;
+                        case LetterQuality.Absent: return ` ${c} `;
                     }
                 })();
                 out2.push(out3);
@@ -246,7 +246,8 @@ class WordGame {
     }
 
     toEmoji(): string {
-        let out: string[] = [`${window.location.href}\n===== ${this.state === WordGameState.Lost ? "X" : this.guesses.length}/${this.limit} =====`];
+        const url = window.location.href.replace("/customizable_word_game/", "/cwg/");
+        let out: string[] = [`${url}\n===== ${this.state === State.Lost ? "X" : this.guesses.length}/${this.limit} =====`];
         for (let i = 0; i < this.guesses.length; i++) {
             const guess = this.guesses[i];
             const quality = this.qualities[i];
@@ -257,9 +258,9 @@ class WordGame {
 
                 let out3 = (() => {
                     switch (q) {
-                        case WordGameLetterQuality.Correct: return "🟩";
-                        case WordGameLetterQuality.Present: return "🟨";
-                        case WordGameLetterQuality.Absent: return "⬛";
+                        case LetterQuality.Correct: return "🟩";
+                        case LetterQuality.Present: return "🟨";
+                        case LetterQuality.Absent: return "⬛";
                     }
                 })();
                 out2.push(out3);
@@ -416,20 +417,20 @@ class WordGameManager {
         if (this._game) {
             const result = this._game.guess(this.input);
             switch (result) {
-                case WordGameGuessResult.Valid:
+                case GuessResult.Valid:
                     this.input = "";
                     this.draw();
                     return true;
-                case WordGameGuessResult.BadLimit:
+                case GuessResult.BadLimit:
                     this.notify("Out of guesses");
                     return false;
-                case WordGameGuessResult.BadRepeat:
+                case GuessResult.BadRepeat:
                     this.notify("Already guessed");
                     return false;
-                case WordGameGuessResult.BadWidth:
+                case GuessResult.BadWidth:
                     this.notify("Not enough letters");
                     return false;
-                case WordGameGuessResult.BadWord:
+                case GuessResult.BadWord:
                     this.notify("Not in word list");
                     return false;
             }
@@ -477,14 +478,14 @@ class WordGameManager {
         if (!this._game) {
             return;
         }
-        if (this.isGameActive() && this._game.state <= WordGameState.InProgress) {
+        if (this.isGameActive() && this._game.state <= State.InProgress) {
             this.buttons.hidden = true;
             return;
         }
         this.buttons.hidden = false;
 
         this.buttonContinue.disabled = this._game.gaveUp || this._game.continuedState >= this._game.state;
-        this.buttonGiveUp.hidden = this._game.gaveUp || this._game.state >= WordGameState.Won;
+        this.buttonGiveUp.hidden = this._game.gaveUp || this._game.state >= State.Won;
         this.buttonNewGame.hidden = !this.buttonGiveUp.hidden;
     }
 
@@ -515,11 +516,12 @@ class WordGameManager {
         }
         this.notificationGiveUp = this.notifications.appendChild(createElementEX("p", {}, [this._game.solution.toUpperCase()]));
         this._game.gaveUp = true;
-        this._game.continuedState = WordGameState.InProgress;
+        this._game.continuedState = State.InProgress;
         this.draw();
     }
 
     newGame() {
+        this.input = "";
         this.game = this.gameGenerator();
     }
 
@@ -578,9 +580,9 @@ class WordGameManager {
         this._game.letters.forEach((c, quality) => {
             this.keys[c].setAttribute("data-state", (() => {
                 switch (quality) {
-                    case WordGameLetterQuality.Correct: return "correct";
-                    case WordGameLetterQuality.Present: return "present";
-                    case WordGameLetterQuality.Absent: return "absent";
+                    case LetterQuality.Correct: return "correct";
+                    case LetterQuality.Present: return "present";
+                    case LetterQuality.Absent: return "absent";
                 }
             })());
         });
@@ -608,9 +610,9 @@ class WordGameManager {
                 tile.innerText = guess.charAt(j);
                 tile.setAttribute("data-state", (() => {
                     switch (quality[j]) {
-                        case WordGameLetterQuality.Correct: return "correct";
-                        case WordGameLetterQuality.Present: return "present";
-                        case WordGameLetterQuality.Absent: return "absent";
+                        case LetterQuality.Correct: return "correct";
+                        case LetterQuality.Present: return "present";
+                        case LetterQuality.Absent: return "absent";
                     }
                 })());
             }
@@ -712,8 +714,8 @@ enum Difficulty {
 
 class WordGameGenerator {
     dictionary: WordDictionary;
-    private initialSeed: string = "";
-    private extraSeed: number = -1;
+    initialSeed: string = "";
+    extraSeed: number = 0;
 
     seedType: SeedType = SeedType.Daily;
     difficulty: Difficulty = Difficulty.Normal;
@@ -723,25 +725,16 @@ class WordGameGenerator {
     constructor(dictionary: WordDictionary, initialParams?: URLSearchParams) {
         this.dictionary = dictionary;
         if (initialParams) {
-            WordGameGenerator.validateParams(initialParams);
+            this.validateParams(initialParams);
         }
     }
 
-    getRng() {
-        this.extraSeed!++;
-        const seed = this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
-
-        if (true || this.seedType !== SeedType.Daily || this.extraSeed !== 0) {
-            const url = new URL(window.location.href);
-            url.searchParams.set("s", seed);
-            window.history.replaceState({}, '', url.toString());
-        }
-
-        return random(seed);
+    seed() {
+        return this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
     }
 
     newGame() {
-        const rng = this.getRng();
+        const rng = random(this.seed());
         let word = (() => {
             switch (this.difficulty) {
                 case Difficulty.Normal: return WordGameGenerator.randomDictionaryWord([this.dictionary[this.width]![1]], rng);
@@ -755,92 +748,134 @@ class WordGameGenerator {
     }
 
     setParams(params: URLSearchParams) {
-        let modified = false;
+        let changed = false;
 
-        if (params.has("w")) this.width = parseInt(params.get("w") as string);
-        if (params.has("l")) this.limit = parseInt(params.get("l") as string);
+        if (params.has("w")) {
+            const w = parseInt(params.get("w")!);
+            if (!isNaN(w) && w !== this.width) {
+                this.width = w;
+                changed = true;
+            }
+        }
+        if (params.has("l")) {
+            const l = parseInt(params.get("l")!);
+            if (!isNaN(l) && l !== this.limit) {
+                this.limit = l;
+                changed = true;
+            }
+        }
+
         if (params.has("d")) {
-            switch (params.get("d") as string) {
-                case "normal":
-                    this.difficulty = Difficulty.Normal;
-                    break;
-                case "hard":
-                    this.difficulty = Difficulty.Hard;
-                    break;
-                case "impossible":
-                    this.difficulty = Difficulty.Impossible;
-                    break;
+            const d = (() => {
+                switch (params.get("d")!) {
+                    case "normal": return Difficulty.Normal
+                    case "hard": return Difficulty.Hard
+                    case "impossible": return Difficulty.Impossible
+                }
+            })();
+            if (d !== undefined && d !== this.difficulty) {
+                this.difficulty = d;
+                changed = true;
             }
         }
 
-        if (params.has("seed")) {
-            switch (params.get("seed") as string) {
-                case "daily":
-                    this.setDailySeed();
+        switch (params.get("seed")!) {
+            case "daily":
+                this.seedType = SeedType.Daily;
+                const start = new Date(2026, 4, 15);
+                const today = new Date();
+                const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-                    if (params.has("s")) {
-                        params.delete("s");
-                        modified = true;
-                    }
-                    break;
-                case "random":
-                    this.setRandomSeed();
+                this.initialSeed = diff.toString();
+                this.extraSeed = 0;
 
-                    params.set("s", this.initialSeed);
-                    modified = true;
-                    break;
-                default:
-                    if (params.has("s")) {
-                        this.setFixedSeed(params.get("s")!);
+                params.set("s", this.seed());
+                changed = true;
+                break;
+            case "random":
+                this.seedType = SeedType.Random;
+                this.initialSeed = WordGameGenerator.randomWord(5);
+                this.extraSeed = 0;
+
+                params.set("s", this.seed());
+                changed = true;
+                break;
+            default:
+                if (params.has("s")) {
+                    if (this.setFixedSeed(params.get("s")!)) {
+                        this.seedType = SeedType.Fixed;
+                        changed = true;
                     } else {
-                        this.setDailySeed();
+                        switch (this.seedType) {
+                            case SeedType.Daily:
+                                params.set("seed", "daily");
+                                break;
+                            case SeedType.Random:
+                                params.set("seed", "random");
+                                break;
+                        }
                     }
-                    break;
-            }
+                } else {
+                    params.set("s", "");
+                    changed = true;
+                }
+                break;
         }
-        return modified;
+        return changed;
     }
 
-    static validateParams(params: URLSearchParams) {
-        let modified = false;
+    validateParams(params: URLSearchParams) {
+        if (params.has("w")) {
+            const w = parseInt(params.get("w")!);
+            if (!w && w !== 0) {
+                params.delete("w");
+            }
+        }
+        if (params.has("l")) {
+            const l = parseInt(params.get("l")!);
+            if (!l && l !== 0) {
+                params.delete("l");
+            }
+        }
+        switch (params.get("seed")!) {
+            case "daily":
+                this.seedType = SeedType.Daily;
+                break;
+            case "random":
+                this.seedType = SeedType.Random;
+                break;
+            case "fixed":
+                this.seedType = SeedType.Fixed;
+                break;
+        }
+
         if (params.has("s")) {
-            if (!params.has("seed") || params.get("seed")! !== "fixed") {
-                params.set("seed", "fixed");
-                modified = true;
-            }
+            this.setFixedSeed(params.get("s")!);
+            params.set("seed", "fixed");
         }
-        return modified;
-    }
-
-    setDailySeed() {
-        this.seedType = SeedType.Daily;
-        const start = new Date(2026, 4, 15);
-        const today = new Date();
-        const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-
-        this.initialSeed = diff.toString();
-        this.extraSeed = -1;
-    }
-
-    setRandomSeed() {
-        this.seedType = SeedType.Random;
-        this.initialSeed = WordGameGenerator.randomWord(5);
-        this.extraSeed = -1;
     }
 
     setFixedSeed(s: string) {
-        this.seedType = SeedType.Fixed;
-        
         const reg = /^(.*)_(\d+)$/;
         const match = s.match(reg);
 
+        let initialSeed: string;
+        let extraSeed: number;
         if (match) {
-            this.initialSeed = match[1];
-            this.extraSeed = parseInt(match[2]) - 1;
+            initialSeed = match[1];
+            extraSeed = parseInt(match[2]);
         } else {
-            this.initialSeed = s;
-            this.extraSeed = -1;
+            initialSeed = s;
+            extraSeed = 0;
         }
+        let changed = initialSeed !== this.initialSeed || extraSeed !== this.extraSeed;
+        this.initialSeed = initialSeed;
+        this.extraSeed = extraSeed;
+        return changed;
+    }
+
+    incrementSeed() {
+        this.extraSeed!++;
     }
 
     static randomWord(length: number, random: RandomNumberGenerator = Math.random) {
@@ -866,49 +901,117 @@ class WordGameGenerator {
 }
 
 function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
-    for(const [key, val] of params) {
+    for (const [key, val] of params) {
         if (form.elements[key as any]) {
             const input = form.elements[key as any] as HTMLInputElement;
-            switch(input.type) {
+            switch (input.type) {
                 case 'checkbox': input.checked = !!val; break;
-                default:         input.value = val;     break;
+                default: input.value = val; break;
             }
         }
     }
 }
 
-const INITIAL_URL = new URL(window.location.href);
-const INITIAL_PARAMS = INITIAL_URL.searchParams;
+function formSeedOnChange(event?: Event) {
+    if (FORM_SEED_FIXED.checked) {
+        FORM_SEED_FIXED_VALUE.tabIndex = 0;
+    } else {
+        FORM_SEED_FIXED_VALUE.tabIndex = -1;
+    }
+}
 
-const DICTIONARY = _dictionary as WordDictionary;
-const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement;
-const FORM = document.getElementById("form") as HTMLFormElement;
-const GENERATOR = new WordGameGenerator(DICTIONARY, INITIAL_PARAMS);
-formDeserialize(FORM, INITIAL_PARAMS);
+function startGame() {
+    FORM_SECTION.hidden = true;
+    WORD_SECTION.hidden = false;
+    MANAGER.active = true;
 
-FORM.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target as HTMLFormElement);
+    const formData = new FormData(FORM);
     const params = new URLSearchParams(formData as any);
 
-    GENERATOR.setParams(params);
+    if (GENERATOR.setParams(params) || !MANAGER.game) {
+        MANAGER.game = GENERATOR.newGame();
+    }
 
     const url = new URL(window.location.href);
     url.search = params.toString();
     window.history.replaceState({}, '', url.toString());
-    
-    FORM_SECTION.hidden = true;
-    WORD_SECTION.hidden = false;
-    MANAGER.active = true;
-    MANAGER.newGame();
-})
+
+    FORM_SEED_FIXED.checked = true;
+    FORM_SEED_FIXED_VALUE.value = GENERATOR.seed();
+
+    GO_BACK.href = window.location.href + "&m=edit";
+}
+
+function stopGame() {
+    FORM_SECTION.hidden = false;
+    WORD_SECTION.hidden = true;
+    MANAGER.active = false;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("m", "edit");
+    window.history.replaceState({}, '', url.toString());
+
+    GO_BACK.href = "/";
+}
+
+const INITIAL_PARAMS = new URL(window.location.href).searchParams;
+
+const GO_BACK = document.getElementById("goBack") as HTMLAnchorElement;
+
+GO_BACK.addEventListener("click", (event) => {
+    if (MANAGER.active) {
+        event.preventDefault();
+        stopGame();
+    }
+});
+
+const DICTIONARY = _dictionary as WordDictionary;
+const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement;
+const FORM = document.getElementById("form") as HTMLFormElement;
+const FORM_SEED_DAILY = document.getElementById("formSeedDaily") as HTMLInputElement;
+const FORM_SEED_RANDOM = document.getElementById("formSeedRandom") as HTMLInputElement;
+const FORM_SEED_FIXED = document.getElementById("formSeedFixed") as HTMLInputElement;
+const FORM_SEED_FIXED_VALUE = document.getElementById("formSeedFixedValue") as HTMLInputElement;
+const GENERATOR = new WordGameGenerator(DICTIONARY, INITIAL_PARAMS);
+formDeserialize(FORM, INITIAL_PARAMS);
+formSeedOnChange();
+
+FORM.addEventListener("submit", (event) => {
+    event.preventDefault();
+    startGame();
+});
+
+FORM_SEED_DAILY.addEventListener("change", formSeedOnChange);
+FORM_SEED_RANDOM.addEventListener("change", formSeedOnChange);
+FORM_SEED_FIXED.addEventListener("change", formSeedOnChange);
+
+FORM_SEED_FIXED_VALUE.addEventListener("click", (event) => {
+    FORM_SEED_FIXED_VALUE.tabIndex = 0;
+    FORM_SEED_FIXED.checked = true;
+});
 
 const WORD_SECTION = document.getElementById("wordSection") as HTMLDivElement;
 const WORD_BOARD = document.getElementById("wordBoard") as HTMLDivElement;
 const WORD_KEYBOARD = document.getElementById("wordKeyboard") as HTMLDivElement;
 const WORD_BUTTONS = document.getElementById("wordButtons") as HTMLDivElement;
 const WORD_NOTIFICATIONS = document.getElementById("wordNotifications") as HTMLDivElement;
-const MANAGER: WordGameManager = new WordGameManager(() => GENERATOR.newGame(), WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
+const MANAGER: WordGameManager = new WordGameManager(() => {
+
+    GENERATOR.incrementSeed();
+    const url = new URL(window.location.href);
+    url.searchParams.set("s", GENERATOR.seed());
+    window.history.replaceState({}, '', url.toString());
+
+    FORM_SEED_FIXED.checked = true;
+    FORM_SEED_FIXED_VALUE.value = GENERATOR.seed();
+
+    return GENERATOR.newGame();
+
+}, WORD_BOARD, WORD_KEYBOARD, WORD_BUTTONS, WORD_NOTIFICATIONS);
+
+if (INITIAL_PARAMS.size > 0 && INITIAL_PARAMS.get("m") !== "edit") {
+    startGame();
+}
 
 (window as any).dictionary = DICTIONARY;
 (window as any).WordGame = WordGame;

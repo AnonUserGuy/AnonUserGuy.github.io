@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { cp, rm } from "node:fs/promises";
+import { cp, rm, readdir, rename } from "node:fs/promises";
 import { glob } from "glob";
 
 await rm("dist", { recursive: true, force: true });
@@ -7,13 +7,13 @@ await rm("dist", { recursive: true, force: true });
 const entryPoints = await glob("src/page/**/index.ts");
 
 await build({
-  entryPoints,
-  outdir: "dist/page",
-  outbase: "src/page",
-  bundle: true,
-  format: "esm",
-  platform: "browser",
-  sourcemap: true
+    entryPoints,
+    outdir: "dist/page",
+    outbase: "src/page",
+    bundle: true,
+    format: "esm",
+    platform: "browser",
+    sourcemap: true
 });
 
 await build({
@@ -26,3 +26,6 @@ await build({
 })
 
 await cp("public", "dist", { recursive: true });
+
+await Promise.allSettled((await readdir("dist/page")).map(folder => rename(`dist/page/${folder}`, `dist/${folder}`)))
+await rm("dist/page", { recursive: true, force: true });

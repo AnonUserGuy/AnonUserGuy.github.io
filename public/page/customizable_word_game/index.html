@@ -23,7 +23,7 @@
 
 <body>
     <div>
-        <a href="/">&lt-- go back</a>
+        <a href="/" id="goBack">&lt-- go back</a>
     </div>
 
     <div class="section" id="formSection">
@@ -57,7 +57,9 @@
                 </p>
                 <p>
                     <input type="radio" id="formSeedFixed" name="seed" value="fixed">
-                    <label for="formSeedFixed"><input type="text" id="formSeedFixedValue" name="s" placeholder="Seed"></label>
+                    <label for="formSeedFixed" id="formSeedFixedLabel">
+                        <input type="text" id="formSeedFixedValue" name="s" placeholder="Seed" tabindex="-1">
+                    </label>
                 </p>
             </div>
             <p>
