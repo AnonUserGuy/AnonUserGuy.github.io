@@ -1,9 +1,5 @@
 import _dictionary from "./dictionary.json";
 
-interface WordDictionary {
-    [index: number]: [string[], string[]] | null | undefined;
-}
-
 enum State {
     InProgress,
     Lost,
@@ -72,11 +68,10 @@ class LetterQualities {
 }
 
 class WordGame {
-    readonly dictionary: WordDictionary;
+    readonly dictionary: string[][][];
 
     limit: number;
     width: number;
-    minWidth: number;
     maxWidth: number;
 
     readonly solution: string;
@@ -93,11 +88,10 @@ class WordGame {
     enforceDictionary = true;
     enforceRepeat = false;
 
-    constructor(dictionary: WordDictionary, width: number, limit: number, solution?: string) {
+    constructor(dictionary: string[][][], width: number, limit: number, solution?: string) {
         this.dictionary = dictionary;
         this.limit = limit;
         this.width = width;
-        this.minWidth = this.width;
         this.maxWidth = this.width;
         if (solution !== undefined) {
             this.solution = solution;
@@ -143,7 +137,7 @@ class WordGame {
     guess(word: string) {
         word = word.toLowerCase();
 
-        if (this.enforceWidth && (word.length < this.minWidth || word.length > this.maxWidth)) {
+        if (this.enforceWidth && (word.length < this.width || word.length > this.maxWidth)) {
             return GuessResult.BadWidth;
         } else if (this.enforceDictionary && !this.dictionaryHas(word)) {
             return GuessResult.BadWord;
@@ -239,7 +233,7 @@ class WordGame {
             out.push(out2.join(" "));
         }
         for (let i = this.guesses.length; i < this.limit; i++) {
-            out.push(Array(this.width).fill(" _ ").join(" "));
+            out.push(Array(this.maxWidth).fill(" _ ").join(" "));
         }
 
         return out.join("\n");
@@ -636,12 +630,12 @@ class WordGameManager {
                     this.scrollTileIntoView(tile);
                 }
             }
-            for (; j < this._game.width; j++) {
+            for (; j < this._game.maxWidth; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = "";
                 tile.setAttribute("data-state", "empty");
             }
-            const width = Math.max(j, this._game.width);
+            const width = Math.max(j, this._game.maxWidth);
             while (tiles.length > width) {
                 const tile = tiles.pop();
                 if (tile) {
@@ -680,7 +674,7 @@ class WordGameManager {
         this.rows[i] = row;
         this.tiles[i] = [];
 
-        for (let j = 0; j < this._game!.width; j++) {
+        for (let j = 0; j < this._game!.maxWidth; j++) {
             this.initTile(i, j);
         }
         this.board.replaceChildren(...this.rows);
@@ -701,6 +695,10 @@ class WordGameManager {
             "data-state": "empty"
         }) as HTMLDivElement;
 
+        if (this._game && j >= this._game.width) {
+            tile.classList.add("word-tile-extra");
+        }
+
         this.tiles[i][j] = tile;
         this.rows[i].replaceChildren(...this.tiles[i]);
 
@@ -716,7 +714,7 @@ class WordGameManager {
         const bottom = rect.y + rect.height;
         const space = window.innerHeight - this.keyboard.offsetHeight;
         const diff = bottom - space;
-        
+
         if (diff > 0) {
             window.scrollBy(0, diff);
         }
@@ -736,16 +734,17 @@ enum Difficulty {
 }
 
 class WordGameGenerator {
-    dictionary: WordDictionary;
+    dictionary: string[][][];
     initialSeed: string = "";
     extraSeed: number = 0;
 
     seedType: SeedType = SeedType.Daily;
     difficulty: Difficulty = Difficulty.Normal;
     width: number = 5;
+    maxWidth: number = 5;
     limit: number = 6;
 
-    constructor(dictionary: WordDictionary, initialParams?: URLSearchParams) {
+    constructor(dictionary: string[][][], initialParams?: URLSearchParams) {
         this.dictionary = dictionary;
         if (initialParams) {
             this.validateParams(initialParams);
@@ -758,15 +757,25 @@ class WordGameGenerator {
 
     newGame() {
         const rng = random(this.seed());
-        let word = (() => {
-            switch (this.difficulty) {
-                case Difficulty.Normal: return WordGameGenerator.randomDictionaryWord([this.dictionary[this.width]![1]], rng);
-                case Difficulty.Hard: return WordGameGenerator.randomDictionaryWord(this.dictionary[this.width]!, rng);
-                case Difficulty.Impossible: return WordGameGenerator.randomWord(this.width, rng);
-            }
-        })();
+        let word: string;
+        switch (this.difficulty) {
+            case Difficulty.Normal: 
+                word = WordGameGenerator.randomDictionaryWord(this.dictionary.slice(this.width, this.maxWidth + 1).map(arr => arr[1]), rng);
+                break;
+            case Difficulty.Hard: 
+                word = WordGameGenerator.randomDictionaryWord(this.dictionary.slice(this.width, this.maxWidth + 1).flat(), rng);
+                break;
+            case Difficulty.Impossible: 
+                word = WordGameGenerator.randomWord(
+                    this.width !== this.maxWidth 
+                    ? Math.floor(this.width + rng() * (this.maxWidth - this.width + 1))
+                    : this.width
+                , rng);
+                break;
+        }
 
         const game = new WordGame(this.dictionary, this.width, this.limit, word);
+        game.maxWidth = this.maxWidth;
         return game;
     }
 
@@ -780,6 +789,28 @@ class WordGameGenerator {
                 changed = true;
             }
         }
+        if (params.has("wmax")) {
+            const wmax = parseInt(params.get("wmax")!);
+            if (!isNaN(wmax) && wmax !== this.maxWidth) {
+                this.maxWidth = wmax;
+                changed = true;
+            }
+            if (this.maxWidth === this.width) {
+                params.delete("wmax");
+            }
+        } else {
+            if (this.maxWidth !== this.width) {
+                this.maxWidth = this.width;
+                changed = true;
+            }
+        }
+        if (this.maxWidth < this.width) {
+            const w = this.width;
+            this.width = this.maxWidth;
+            this.maxWidth = w;
+            changed = true;
+        }
+
         if (params.has("l")) {
             const l = parseInt(params.get("l")!);
             if (!isNaN(l) && l !== this.limit) {
@@ -848,18 +879,14 @@ class WordGameGenerator {
     }
 
     validateParams(params: URLSearchParams) {
-        if (params.has("w")) {
-            const w = parseInt(params.get("w")!);
-            if (!w && w !== 0) {
-                params.delete("w");
-            }
+        const w = WordGameGenerator.validateIntParam(params, "w");
+        const wmax = WordGameGenerator.validateIntParam(params, "wmax");
+        if (!isNaN(w) && !isNaN(wmax) && wmax < w) {
+            params.set("w", wmax.toString());
+            params.set("wmax", w.toString());
         }
-        if (params.has("l")) {
-            const l = parseInt(params.get("l")!);
-            if (!l && l !== 0) {
-                params.delete("l");
-            }
-        }
+        WordGameGenerator.validateIntParam(params, "l");
+
         switch (params.get("seed")!) {
             case "daily":
                 this.seedType = SeedType.Daily;
@@ -876,6 +903,18 @@ class WordGameGenerator {
             this.setFixedSeed(params.get("s")!);
             params.set("seed", "fixed");
         }
+    }
+
+    static validateIntParam(params: URLSearchParams, name: string) {
+        if (!params.has(name)) {
+            return NaN;
+        }
+        const int = parseInt(params.get(name)!);
+        if (isNaN(int)) {
+            params.delete(name);
+            return NaN;
+        }
+        return int;
     }
 
     setFixedSeed(s: string) {
@@ -935,14 +974,6 @@ function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
     }
 }
 
-function formSeedOnChange(event?: Event) {
-    if (FORM_SEED_FIXED.checked) {
-        FORM_SEED_FIXED_VALUE.tabIndex = 0;
-    } else {
-        FORM_SEED_FIXED_VALUE.tabIndex = -1;
-    }
-}
-
 function startGame() {
     FORM_SECTION.hidden = true;
     WORD_SECTION.hidden = false;
@@ -988,25 +1019,63 @@ GO_BACK.addEventListener("click", (event) => {
     }
 });
 
-const DICTIONARY = _dictionary as WordDictionary;
+const DICTIONARY = _dictionary as string[][][];
 const FORM_SECTION = document.getElementById("formSection") as HTMLDivElement;
 const FORM = document.getElementById("form") as HTMLFormElement;
+
+const FORM_WIDTH = document.getElementById("formWidth") as HTMLInputElement;
+const FORM_WIDTH_MAX = document.getElementById("formWidthMax") as HTMLInputElement;
+const FORM_WIDTH_MAX_ENABLED = document.getElementById("formWidthMaxEnabled") as HTMLInputElement;
+
 const FORM_SEED_DAILY = document.getElementById("formSeedDaily") as HTMLInputElement;
 const FORM_SEED_RANDOM = document.getElementById("formSeedRandom") as HTMLInputElement;
 const FORM_SEED_FIXED = document.getElementById("formSeedFixed") as HTMLInputElement;
 const FORM_SEED_FIXED_VALUE = document.getElementById("formSeedFixedValue") as HTMLInputElement;
+
 const GENERATOR = new WordGameGenerator(DICTIONARY, INITIAL_PARAMS);
 formDeserialize(FORM, INITIAL_PARAMS);
-formSeedOnChange();
 
 FORM.addEventListener("submit", (event) => {
     event.preventDefault();
     startGame();
 });
 
+FORM_WIDTH.addEventListener("change", () => {
+    if (!FORM_WIDTH_MAX_ENABLED.checked || parseInt(FORM_WIDTH.value) > parseInt(FORM_WIDTH_MAX.value)) {
+        FORM_WIDTH_MAX.value = FORM_WIDTH.value;
+    }
+});
+
+FORM_WIDTH_MAX.addEventListener("change", () => {
+    if (FORM_WIDTH_MAX_ENABLED.checked && parseInt(FORM_WIDTH.value) > parseInt(FORM_WIDTH_MAX.value)) {
+        FORM_WIDTH.value = FORM_WIDTH_MAX.value;
+    }
+});
+
+FORM_WIDTH_MAX_ENABLED.addEventListener("change", () => {
+    if (!FORM_WIDTH_MAX_ENABLED.checked) {
+        FORM_WIDTH_MAX.disabled = true;
+        FORM_WIDTH_MAX.value = FORM_WIDTH.value;
+    } else {
+        FORM_WIDTH_MAX.disabled = false;
+    }
+});
+if (FORM_WIDTH_MAX.value !== FORM_WIDTH.value) {
+    FORM_WIDTH_MAX.disabled = false;
+    FORM_WIDTH_MAX_ENABLED.checked = true;
+}
+
+function formSeedOnChange() {
+    if (FORM_SEED_FIXED.checked) {
+        FORM_SEED_FIXED_VALUE.tabIndex = 0;
+    } else {
+        FORM_SEED_FIXED_VALUE.tabIndex = -1;
+    }
+}
 FORM_SEED_DAILY.addEventListener("change", formSeedOnChange);
 FORM_SEED_RANDOM.addEventListener("change", formSeedOnChange);
 FORM_SEED_FIXED.addEventListener("change", formSeedOnChange);
+formSeedOnChange();
 
 FORM_SEED_FIXED_VALUE.addEventListener("click", (event) => {
     FORM_SEED_FIXED_VALUE.tabIndex = 0;

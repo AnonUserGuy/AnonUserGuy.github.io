@@ -2,14 +2,23 @@
 ### general ### 
 */
 
+:root {
+    --bg-color-min: powderblue;
+    --bg-color-mid: lightblue;
+    --bg-color-max: lightsteelblue;
+    --bg-color-supermax: lightskyblue;
+    --error-color: salmon;
+    --info-color: beige;
+}
+
 body {
-    background-color: powderblue;
+    background-color: var(--bg-color-min);
     font-family: "Comic Sans MS", "Comic Sans", sans-serif;
     text-align: center;
 }
 
 input[type="file"] {
-    background-color: LightSteelBlue;
+    background-color: var(--bg-color-max);
     max-width: 100%
 }
 
@@ -22,7 +31,7 @@ input[type="submit"] {
 .section-wide {
     position: relative;
     padding: 3px;
-    background-color: lightblue;
+    background-color: var(--bg-color-mid);
     width: 600px;
     max-width: calc(100% - 8px);
     margin: auto;
@@ -37,7 +46,7 @@ input[type="submit"] {
 
 .selector {
     text-align: left;
-    background-color: LightSteelBlue;
+    background-color: var(--bg-color-max);
     width: fit-content;
     max-width: 100%;
     margin: auto;
@@ -70,12 +79,12 @@ abbr {
 }
 
 .error {
-    background-color: salmon;
+    background-color: var(--error-color);
     margin: 16px;
 }
 
 .info {
-    background-color: beige;
+    background-color: var(--info-color);
     margin: 16px;
 }
 
@@ -92,7 +101,7 @@ abbr {
 summary {
     position: sticky;
     top: 0;
-    background-color: lightblue;
+    background-color: var(--bg-color-mid);
     z-index: 1;
     cursor: pointer;
     height: 53px;
@@ -265,16 +274,13 @@ table {
     width: 100%;
 }
 
-table tr:nth-child(odd)>*:nth-child(odd):not([colspan]) {
-    background-color: LightSteelBlue;
-}
-
+table tr:nth-child(odd)>*:nth-child(odd):not([colspan]),
 table tr:nth-child(even)>*:nth-child(even):not([colspan]) {
-    background-color: LightSteelBlue;
+    background-color: var(--bg-color-max);
 }
 
 table tr>th[colspan] {
-    background-color: LightSkyBlue;
+    background-color: var(--bg-color-supermax);
 }
 
 
@@ -282,6 +288,9 @@ table tr>th[colspan] {
 /* 
 ### youtube_comment ### 
 */
+:root {
+    --livechat-color: MediumVioletRed;
+}
 
 .comment {
     margin: 10px;
@@ -306,7 +315,7 @@ table tr>th[colspan] {
 }
 
 .comment-body {
-    background-color: LightSteelBlue;
+    background-color: var(--bg-color-max);
     padding: 10px;
 }
 
@@ -322,7 +331,7 @@ table tr>th[colspan] {
 }
 
 .comment-livechat {
-    color: MediumVioletRed;
+    color: var(--livechat-color);
 }
 
 
@@ -330,6 +339,28 @@ table tr>th[colspan] {
 /*
 ### customizable_word_game ###
 */
+:root {
+    --word-hover: 10%;
+    --word-active: 20%;
+
+    --word-empty-color: grey;
+    --word-empty-color-hover:  color-mix(in srgb, var(--word-empty-color), black var(--word-hover));
+    --word-empty-color-active: color-mix(in srgb, var(--word-empty-color), black var(--word-active));
+    --word-typing-color: white;
+    --word-absent-color: #444;
+    --word-absent-color-hover:  color-mix(in srgb, var(--word-absent-color), black var(--word-hover));
+    --word-absent-color-active: color-mix(in srgb, var(--word-absent-color), black var(--word-active));
+    --word-present-color: DarkKhaki;
+    --word-present-color-hover:  color-mix(in srgb, var(--word-present-color), black var(--word-hover));
+    --word-present-color-active: color-mix(in srgb, var(--word-present-color), black var(--word-active));
+    --word-correct-color: MediumSeaGreen;
+    --word-correct-color-hover:  color-mix(in srgb, var(--word-correct-color), black var(--word-hover));
+    --word-correct-color-active: color-mix(in srgb, var(--word-correct-color), black var(--word-active));
+
+    --word-text-color: white;
+    --word-notification-color: white;
+}
+
 .word-board {
     width: fit-content;
     max-width: calc(100% - 8px);
@@ -342,8 +373,8 @@ table tr>th[colspan] {
 
 .word-tile {
     display: flex;
-    background-color: lightsteelblue;
-    color: white;
+    background-color: var(--bg-color-max);
+    color: var(--word-text-color);
     width: 60px;
     aspect-ratio: 1 / 1;
     margin: 3px;
@@ -356,25 +387,28 @@ table tr>th[colspan] {
 }
 
 .word-tile[data-state="empty"] {
-    border: 4px solid grey;
+    border: 4px solid var(--word-empty-color);
 }
 
 .word-tile[data-state="typing"] {
-    border: 4px solid white;
+    border: 4px solid var(--word-typing-color);
 }
 
 .word-tile[data-state="absent"] {
-    background-color: #555;
+    background-color: var(--word-absent-color);
 }
 
 .word-tile[data-state="present"] {
-    background-color: DarkKhaki;
+    background-color: var(--word-present-color);
 }
 
 .word-tile[data-state="correct"] {
-    background-color: MediumSeaGreen;
+    background-color: var(--word-correct-color);
 }
 
+.word-tile-extra {
+    background-color: var(--bg-color-supermax);
+}
 
 .word-keyboard {
     display: flex;
@@ -383,7 +417,7 @@ table tr>th[colspan] {
     margin: auto;
     position: sticky;
     bottom: 0px;
-    background-color: powderblue;
+    background-color: var(--bg-color-min);
 }
 
 .word-keyrow {
@@ -395,8 +429,8 @@ table tr>th[colspan] {
     display: flex;
     font-family: "Comic Sans MS", "Comic Sans", sans-serif;
     font-size: 1em;
-    background-color: grey;
-    color: white;
+    background-color: var(--word-empty-color);
+    color: var(--word-text-color);
     width: 40px;
     height: 50px;
     margin: 3px;
@@ -412,51 +446,51 @@ table tr>th[colspan] {
 }
 
 .word-key:hover {
-    background-color: #777;
+    background-color: var(--word-empty-color-hover);
 }
 
 .word-key:active,
 .word-key-active {
-    background-color: #666;
+    background-color: var(--word-empty-color-active);
 }
 
 .word-key[data-state="absent"] {
-    background-color: #555;
+    background-color: var(--word-absent-color);
 }
 
 .word-key[data-state="absent"]:hover {
-    background-color: #444;
+    background-color: var(--word-absent-color-hover);
 }
 
 .word-key[data-state="absent"]:active,
 .word-key-active[data-state="absent"] {
-    background-color: #333;
+    background-color: var(--word-absent-color-active);
 }
 
 .word-key[data-state="present"] {
-    background-color: DarkKhaki;
+    background-color: var(--word-present-color);
 }
 
 .word-key[data-state="present"]:hover {
-    background-color: #AdA75b;
+    background-color: var(--word-present-color-hover);
 }
 
 .word-key[data-state="present"]:active,
 .word-key-active[data-state="present"] {
-    background-color: #9d974b;
+    background-color: var(--word-present-color-active);
 }
 
 .word-key[data-state="correct"] {
-    background-color: MediumSeaGreen;
+    background-color: var(--word-correct-color);
 }
 
 .word-key[data-state="correct"]:hover {
-    background-color: #2cA361;
+    background-color: var(--word-correct-color-hover);
 }
 
 .word-key[data-state="correct"]:active,
 .word-key-active[data-state="correct"] {
-    background-color: #1c9351;
+    background-color: var(--word-correct-color-active);
 }
 
 .word-key-wide {
@@ -479,8 +513,8 @@ table tr>th[colspan] {
     display: flex;
     font-family: "Comic Sans MS", "Comic Sans", sans-serif;
     font-size: 1em;
-    background-color: grey;
-    color: white;
+    background-color: var(--word-empty-color);
+    color: var(--word-text-color);
     margin: 3px;
     justify-content: center;
     align-items: center;
@@ -497,16 +531,16 @@ table tr>th[colspan] {
 }
 
 .word-button:hover {
-    background-color: #777;
+    background-color: var(--word-empty-color-hover);
 }
 
 .word-button:active {
-    background-color: #666;
+    background-color: var(--word-empty-color-active);
 }
 
 .word-button:disabled {
     color: grey;
-    background-color: #555;
+    background-color: var(--word-absent-color);
     cursor: revert;
 }
 
@@ -517,10 +551,11 @@ table tr>th[colspan] {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
+    z-index: 1;
 }
 
 .word-notifications>p {
-    background-color: white;
+    background-color: var(--word-notification-color);
     padding: 8px;
     border-radius: 5px;
     text-align: left;
