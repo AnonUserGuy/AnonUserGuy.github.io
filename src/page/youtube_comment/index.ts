@@ -1,4 +1,4 @@
-import * as info from "@js/get_youtube_info.js";
+import * as info from "./get_youtube_info.js";
 
 enum CommentType {
     Comment,

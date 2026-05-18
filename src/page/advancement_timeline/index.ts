@@ -1,4 +1,4 @@
-import * as manager from "@js/minecraft_timeline_manager.js";
+import * as manager from "./minecraft_timeline_manager.js";
 
 const DateTimeFormat = new Intl.DateTimeFormat(undefined, {
     dateStyle: "short",
