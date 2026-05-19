@@ -22,8 +22,16 @@ function startGame() {
     const formData = new FormData(form);
     const params = new URLSearchParams(formData as any);
 
+    if (!formEnforceDictionary.checked) {
+        params.set("nodictionary", "on");
+    } else {
+        params.delete("nodictionary");
+    }
+
     if (generator.setParams(params) || !manager.game) {
         manager.game = generator.newGame();
+    } else if (generator.updateGameParams(manager.game)) {
+        manager.reset();
     }
 
     const url = new URL(window.location.href);
@@ -67,6 +75,13 @@ const formWidth = document.getElementById("formWidth") as HTMLInputElement;
 const formWidthMax = document.getElementById("formWidthMax") as HTMLInputElement;
 const formWidthMaxEnabled = document.getElementById("formWidthMaxEnabled") as HTMLInputElement;
 
+const formEnforceDictionary = document.getElementById("formEnforceDictionary") as HTMLInputElement;
+if (initialParams.has("nodictionary")) {
+    formEnforceDictionary.checked = false;
+} else {
+    formEnforceDictionary.checked = true;
+}
+
 const formSeedDaily = document.getElementById("formSeedDaily") as HTMLInputElement;
 const FormSeedRandom = document.getElementById("formSeedRandom") as HTMLInputElement;
 const formSeedFixed = document.getElementById("formSeedFixed") as HTMLInputElement;
@@ -100,7 +115,9 @@ formWidthMaxEnabled.addEventListener("change", () => {
         formWidthMax.disabled = false;
     }
 });
-if (formWidthMax.value !== formWidth.value) {
+if (!initialParams.has("wmax")) {
+    formWidthMax.value = formWidth.value;
+} else {
     formWidthMax.disabled = false;
     formWidthMaxEnabled.checked = true;
 }

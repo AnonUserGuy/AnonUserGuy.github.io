@@ -23,6 +23,9 @@ class WordGameGenerator {
     maxWidth: number = 5;
     limit: number = 6;
 
+    enforceDictionary = true;
+    enforceUnique = false;
+
     constructor(dictionary: string[][][], initialParams?: URLSearchParams) {
         this.dictionary = dictionary;
         if (initialParams) {
@@ -34,14 +37,24 @@ class WordGameGenerator {
         return this.extraSeed ? `${this.initialSeed}_${this.extraSeed}` : this.initialSeed!;
     }
 
+    realSeed() {
+        const seed = tsh(this.seed());
+
+        let j = 0;
+        j = addshift(j, this.maxWidth - 5, 5);
+        j += this.width - 5;
+        return (seed + j) >>> 0;
+    }
+
     newGame() {
-        const rng = random(this.seed());
+        const rng = random(this.realSeed());
         let word: string;
         switch (this.difficulty) {
             case Difficulty.Normal:
                 word = WordGameGenerator.randomDictionaryWord(this.dictionary.slice(this.width, this.maxWidth + 1).map(arr => arr[1]), rng);
                 break;
             case Difficulty.Hard:
+                rng();
                 word = WordGameGenerator.randomDictionaryWord(this.dictionary.slice(this.width, this.maxWidth + 1).flat(), rng);
                 break;
             case Difficulty.Impossible:
@@ -55,24 +68,36 @@ class WordGameGenerator {
 
         const game = new WordGame(this.dictionary, this.width, this.limit, word);
         game.maxWidth = this.maxWidth;
+        this.updateGameParams(game);
         return game;
     }
 
+    updateGameParams(game: WordGame) {
+        let needsReset = false;
+        if (game.limit !== this.limit) {
+            game.limit = this.limit;
+            needsReset = true;
+        }
+        game.enforceDictionary = this.enforceDictionary;
+        game.enforceUnique = this.enforceUnique;
+        return needsReset;
+    }
+
     setParams(params: URLSearchParams) {
-        let changed = false;
+        let needsNewGame = false;
 
         if (params.has("w")) {
             const w = parseInt(params.get("w")!);
             if (!isNaN(w) && w !== this.width) {
                 this.width = w;
-                changed = true;
+                needsNewGame = true;
             }
         }
         if (params.has("wmax")) {
             const wmax = parseInt(params.get("wmax")!);
             if (!isNaN(wmax) && wmax !== this.maxWidth) {
                 this.maxWidth = wmax;
-                changed = true;
+                needsNewGame = true;
             }
             if (this.maxWidth === this.width) {
                 params.delete("wmax");
@@ -80,23 +105,25 @@ class WordGameGenerator {
         } else {
             if (this.maxWidth !== this.width) {
                 this.maxWidth = this.width;
-                changed = true;
+                needsNewGame = true;
             }
         }
         if (this.maxWidth < this.width) {
             const w = this.width;
             this.width = this.maxWidth;
             this.maxWidth = w;
-            changed = true;
+            needsNewGame = true;
         }
 
         if (params.has("l")) {
             const l = parseInt(params.get("l")!);
             if (!isNaN(l) && l !== this.limit) {
                 this.limit = l;
-                changed = true;
             }
         }
+
+        this.enforceDictionary = !params.has("nodictionary");
+        this.enforceUnique = params.has("unique");
 
         if (params.has("d")) {
             const d = (() => {
@@ -108,7 +135,7 @@ class WordGameGenerator {
             })();
             if (d !== undefined && d !== this.difficulty) {
                 this.difficulty = d;
-                changed = true;
+                needsNewGame = true;
             }
         }
 
@@ -123,7 +150,7 @@ class WordGameGenerator {
                 this.extraSeed = 0;
 
                 params.set("s", this.seed());
-                changed = true;
+                needsNewGame = true;
                 break;
             case "random":
                 this.seedType = SeedType.Random;
@@ -131,13 +158,13 @@ class WordGameGenerator {
                 this.extraSeed = 0;
 
                 params.set("s", this.seed());
-                changed = true;
+                needsNewGame = true;
                 break;
             default:
                 if (params.has("s")) {
                     if (this.setFixedSeed(params.get("s")!)) {
                         this.seedType = SeedType.Fixed;
-                        changed = true;
+                        needsNewGame = true;
                     } else {
                         switch (this.seedType) {
                             case SeedType.Daily:
@@ -150,11 +177,11 @@ class WordGameGenerator {
                     }
                 } else {
                     params.set("s", "");
-                    changed = true;
+                    needsNewGame = true;
                 }
                 break;
         }
-        return changed;
+        return needsNewGame;
     }
 
     validateParams(params: URLSearchParams) {
@@ -239,6 +266,12 @@ class WordGameGenerator {
 
         return dictionary[i][randVal];
     }
+}
+
+function addshift(j: number, n: number, w: number) {
+    j += n;
+    w %= 32;
+    return ((j << w) | (j >>> (32 - w))) >>> 0;
 }
 
 export { WordGameGenerator };

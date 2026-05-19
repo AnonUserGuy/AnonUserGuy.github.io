@@ -70,7 +70,7 @@ class LetterQualities {
 class WordGame {
     readonly dictionary: string[][][];
 
-    limit: number;
+    private _limit: number;
     width: number;
     maxWidth: number;
 
@@ -86,11 +86,11 @@ class WordGame {
 
     enforceWidth = true;
     enforceDictionary = true;
-    enforceRepeat = false;
+    enforceUnique = false;
 
     constructor(dictionary: string[][][], width: number, limit: number, solution?: string) {
         this.dictionary = dictionary;
-        this.limit = limit;
+        this._limit = limit;
         this.width = width;
         this.maxWidth = this.width;
         if (solution !== undefined) {
@@ -104,6 +104,18 @@ class WordGame {
         this.guesses = [];
         this.qualities = [];
         this.letters = new LetterQualities();
+    }
+
+    get limit() {
+        return this._limit;
+    }
+    set limit(limit: number) {
+        this._limit = limit;
+        if (this.guesses.length >= limit && this.state === State.InProgress) {
+            this.state = State.Lost;
+        } else if (this.guesses.length < limit && this.state === State.Lost) {
+            this.state = State.InProgress;
+        }
     }
 
     dictionaryHas(word: string): boolean {
@@ -141,7 +153,7 @@ class WordGame {
             return GuessResult.BadWidth;
         } else if (this.enforceDictionary && !this.dictionaryHas(word)) {
             return GuessResult.BadWord;
-        } else if (this.enforceRepeat && this.guesses.indexOf(word) !== -1) {
+        } else if (this.enforceUnique && this.guesses.indexOf(word) !== -1) {
             return GuessResult.BadRepeat;
         } else if (!this.isActive()) {
             return GuessResult.BadLimit;
@@ -203,7 +215,7 @@ class WordGame {
 
         if (won) {
             this.state = State.Won;
-        } else if (this.state !== State.Won && this.guesses.length >= this.limit) {
+        } else if (this.state !== State.Won && this.guesses.length >= this._limit) {
             this.state = State.Lost;
         }
 
@@ -232,7 +244,7 @@ class WordGame {
             }
             out.push(out2.join(" "));
         }
-        for (let i = this.guesses.length; i < this.limit; i++) {
+        for (let i = this.guesses.length; i < this._limit; i++) {
             out.push(Array(this.maxWidth).fill(" _ ").join(" "));
         }
 
@@ -241,7 +253,7 @@ class WordGame {
 
     toEmoji(): string {
         const url = window.location.href.replace("/customizable_word_game/", "/cwg/");
-        let out: string[] = [`${url}\n===== ${this.state === State.Lost ? "X" : this.guesses.length}/${this.limit} =====`];
+        let out: string[] = [`${url}\n===== ${this.state === State.Lost ? "X" : this.guesses.length}/${this._limit} =====`];
         for (let i = 0; i < this.guesses.length; i++) {
             const guess = this.guesses[i];
             const quality = this.qualities[i];

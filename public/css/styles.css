@@ -59,6 +59,13 @@ input[type="submit"] {
     margin-bottom: 10px;
 }
 
+.text-entries {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
 .dot {
     position: fixed;
     overflow: hidden;
@@ -126,13 +133,6 @@ summary>h6 {
 
 details>ul {
     margin-bottom: 0px;
-}
-
-.text-entries {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
 }
 
 .right-button {

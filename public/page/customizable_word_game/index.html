@@ -29,13 +29,25 @@
     <div class="section" id="formSection">
         <h2>Customizable Word Game</h2>
         <form id="form">
-            <p>
+            <p class="text-entries">
                 <label for="formWidth">Word width: </label>
                 <input type="number" id="formWidth" name="w" min="0" max="18" value="5"> ~ 
-                <input type="checkbox" id="formWidthMaxEnabled"> 
-                <input type="number" id="formWidthMax" name="wmax" min="0" max="18" value="5" disabled>
+                <span>
+                    <input type="checkbox" id="formWidthMaxEnabled"> 
+                    <input type="number" id="formWidthMax" name="wmax" min="0" max="18" value="5" disabled>
+                </span>
             </p>
             <p><label for="formLimit">Guess limit: </label><input type="number" id="formLimit" name="l" min="1" max="999" value="6"></p>
+            <p class="text-entries">
+                <span>Guesses must be: </span>
+                <span>
+                    <input type="checkbox" id="formEnforceDictionary" checked><label for="formEnforceDictionary">in dictionary</label>
+                    <input type="hidden" name="nodictionary">
+                </span>
+                <span>
+                    <input type="checkbox" id="formEnforceUnique" name="unique"><label for="formEnforceUnique">unique</label>
+                </span>
+            </p>
             <div class="selector">
                 <p>
                     <input type="radio" id="formDifficultyNormal" name="d" value="normal" checked>
