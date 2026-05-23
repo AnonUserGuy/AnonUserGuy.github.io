@@ -1,5 +1,6 @@
+import { WordGame } from "./word_game";
+import { WordGameParams } from "./word_game_params";
 import { WordGameManager } from "./word_game_manager";
-import { WordGameGenerator } from "./word_game_generator";
 import _dictionary from "./dictionary.json";
 
 function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
@@ -14,32 +15,52 @@ function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
     }
 }
 
+function updateForm() {
+    formDeserialize(form, initialSearch);
+
+    if (initialSearch.has("s")) {
+        formSeedFixed.checked = true;
+    }
+
+    if (initialSearch.has("nodictionary")) {
+        formEnforceDictionary.checked = false;
+    } else {
+        formEnforceDictionary.checked = true;
+    }
+}
+
 function startGame() {
     formSection.hidden = true;
     wordSection.hidden = false;
     manager.active = true;
 
     const formData = new FormData(form);
-    const params = new URLSearchParams(formData as any);
+    const search = new URLSearchParams(formData as any);
 
     if (!formEnforceDictionary.checked) {
-        params.set("nodictionary", "on");
+        search.set("nodictionary", "on");
     } else {
-        params.delete("nodictionary");
+        search.delete("nodictionary");
     }
 
-    if (generator.setParams(params) || !manager.game) {
-        manager.game = generator.newGame();
-    } else if (generator.updateGameParams(manager.game)) {
-        manager.reset();
+    let newParams = WordGameParams.fromURLSearchParams(search, params);
+
+    if (newParams.needsNewGame(params) || !manager.game) {
+        manager.game = new WordGame(dictionary, newParams.clone());
+    } else {
+        manager.game.params = newParams.clone();
+        if (newParams.needsReset(params)) {
+            manager.reset();
+        }
     }
+    params = newParams;
 
     const url = new URL(window.location.href);
-    url.search = params.toString();
+    url.search = search.toString();
     window.history.replaceState({}, '', url.toString());
 
     formSeedFixed.checked = true;
-    formSeedFixedValue.value = generator.seed();
+    formSeedFixedValue.value = params.stringSeed();
 
     goBack.href = window.location.href + "&m=edit";
 }
@@ -56,7 +77,7 @@ function stopGame() {
     goBack.href = "/";
 }
 
-const initialParams = new URL(window.location.href).searchParams;
+const initialSearch = new URL(window.location.href).searchParams;
 
 const goBack = document.getElementById("goBack") as HTMLAnchorElement;
 
@@ -76,19 +97,13 @@ const formWidthMax = document.getElementById("formWidthMax") as HTMLInputElement
 const formWidthMaxEnabled = document.getElementById("formWidthMaxEnabled") as HTMLInputElement;
 
 const formEnforceDictionary = document.getElementById("formEnforceDictionary") as HTMLInputElement;
-if (initialParams.has("nodictionary")) {
-    formEnforceDictionary.checked = false;
-} else {
-    formEnforceDictionary.checked = true;
-}
 
 const formSeedDaily = document.getElementById("formSeedDaily") as HTMLInputElement;
 const FormSeedRandom = document.getElementById("formSeedRandom") as HTMLInputElement;
 const formSeedFixed = document.getElementById("formSeedFixed") as HTMLInputElement;
 const formSeedFixedValue = document.getElementById("formSeedFixedValue") as HTMLInputElement;
-
-const generator = new WordGameGenerator(dictionary, initialParams);
-formDeserialize(form, initialParams);
+let params = WordGameParams.fromURLSearchParams(initialSearch);
+updateForm();
 
 form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -115,7 +130,7 @@ formWidthMaxEnabled.addEventListener("change", () => {
         formWidthMax.disabled = false;
     }
 });
-if (!initialParams.has("wmax")) {
+if (!initialSearch.has("wmax")) {
     formWidthMax.value = formWidth.value;
 } else {
     formWidthMax.disabled = false;
@@ -146,24 +161,41 @@ const wordButtons = document.getElementById("wordButtons") as HTMLDivElement;
 const wordNotifications = document.getElementById("wordNotifications") as HTMLDivElement;
 const manager: WordGameManager = new WordGameManager(() => {
 
-    generator.incrementSeed();
+    params.incrementSeed();
     const url = new URL(window.location.href);
-    url.searchParams.set("s", generator.seed());
+    url.searchParams.set("s", params.stringSeed());
     window.history.replaceState({}, '', url.toString());
 
     formSeedFixed.checked = true;
-    formSeedFixedValue.value = generator.seed();
+    formSeedFixedValue.value = params.stringSeed();
 
-    return generator.newGame();
+    return new WordGame(dictionary, params.clone());
 
 }, wordBoard, wordKeyboard, wordButtons, wordNotifications);
 
-if (initialParams.size > 0 && initialParams.get("m") !== "edit") {
+const gameStr = localStorage.getItem("wordGame");
+if (gameStr) {
+    const initialGame = WordGame.fromJSON(dictionary, gameStr);
+    let playInitial = true;
+    if (initialSearch.size <= 0 && initialGame.guesses.length < initialGame.params.limit) {
+        initialGame.params.toURLSearchParams(initialSearch);
+    } else if (initialGame.params.needsNewGame(params)) {
+        playInitial = false;
+    }
+    if (playInitial) {
+        updateForm();
+        params = initialGame.params;
+        manager.active = true; // TODO: fix this
+        manager.game = initialGame;
+        manager.active = false;
+    }
+}
+if (initialSearch.size > 0 && initialSearch.get("m") !== "edit") {
     startGame();
 }
 
 (window as any).dictionary = dictionary;
-(window as any).generator = generator;
 (window as any).manager = manager;
+(window as any).WordGame = WordGame;
 
 export { }

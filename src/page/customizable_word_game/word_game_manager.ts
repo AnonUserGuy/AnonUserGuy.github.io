@@ -36,11 +36,11 @@ class WordGameManager {
         this.buttons = buttons || createElementEX("div", { "class": "word-buttons" }) as HTMLDivElement;
         this.notifications = notifications || createElementEX("div", { "class": "word-notifications" }) as HTMLDivElement;
 
-        window.addEventListener("keydown", (event) => this.keyDown(event));
-        window.addEventListener("keyup", (event) => this.keyUp(event));
-        window.addEventListener("mousedown", (event) => this.mouseEvent(event));
-        window.addEventListener("pointerdown", (event) => this.mouseEvent(event));
-        window.addEventListener("touchstart", (event) => this.mouseEvent(event));
+        window.addEventListener("keydown", this.keyDown.bind(this));
+        window.addEventListener("keyup", this.keyUp.bind(this));
+        window.addEventListener("mousedown", this.mouseEvent.bind(this));
+        window.addEventListener("pointerdown", this.mouseEvent.bind(this));
+        window.addEventListener("touchstart", this.mouseEvent.bind(this));
 
         this.initKeyboard();
         this.initButtons();
@@ -120,7 +120,7 @@ class WordGameManager {
         this.targetUp(target);
     }
 
-    mouseEvent(event?: MouseEvent | TouchEvent) {
+    mouseEvent() {
         this.isTabbed = false;
     }
 
@@ -133,7 +133,7 @@ class WordGameManager {
     }
 
     type(c: string) {
-        if (this._game && (!this._game.enforceWidth || this.input.length < this._game.maxWidth)) {
+        if (this._game && (!this._game.params.enforceWidth || this.input.length < this._game.params.maxWidth)) {
             this.input += c;
             this.draw();
             return true;
@@ -179,6 +179,13 @@ class WordGameManager {
         this.drawBoard();
         this.drawKeyboard();
         this.drawButtons();
+        this.save();
+    }
+
+    save() {
+        if (this._game && this._game.guesses.length > 0) {
+            localStorage.setItem("wordGame", JSON.stringify(this._game));
+        }
     }
 
     reset() {
@@ -194,13 +201,13 @@ class WordGameManager {
 
     initButtons() {
         this.buttonContinue = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["Continue"]) as HTMLButtonElement);
-        this.buttonContinue.addEventListener("click", () => this.continue());
+        this.buttonContinue.addEventListener("click", this.continue.bind(this));
         this.buttonShare = this.buttons.appendChild(createElementEX("button", { "class": "word-button word-button-center" }, ["Share"]) as HTMLButtonElement);
-        this.buttonShare.addEventListener("click", () => this.share());
+        this.buttonShare.addEventListener("click", this.share.bind(this));
         this.buttonGiveUp = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["Give Up"]) as HTMLButtonElement);
-        this.buttonGiveUp.addEventListener("click", () => this.giveUp());
+        this.buttonGiveUp.addEventListener("click", this.giveUp.bind(this));
         this.buttonNewGame = this.buttons.appendChild(createElementEX("button", { "class": "word-button" }, ["New Game"]) as HTMLButtonElement);
-        this.buttonNewGame.addEventListener("click", () => this.newGame());
+        this.buttonNewGame.addEventListener("click", this.newGame.bind(this));
     }
 
     drawButtons() {
@@ -280,7 +287,7 @@ class WordGameManager {
                 } else {
                     const key = row.appendChild(createElementEX("button", { "class": "word-key" }, [c]) as HTMLButtonElement);
                     this.keys[c] = key;
-                    key.addEventListener("click", () => this.type(c));
+                    key.addEventListener("click", this.type.bind(this, c));
                 }
 
             }
@@ -288,9 +295,9 @@ class WordGameManager {
 
         this.keyenter = createElementEX("button", { "class": "word-key word-key-wide" }, ["⤶"]) as HTMLButtonElement;
         row!.prepend(this.keyenter);
-        this.keyenter.addEventListener("click", () => this.enter());
+        this.keyenter.addEventListener("click", this.enter.bind(this));
         this.keyback = row!.appendChild(createElementEX("button", { "class": "word-key word-key-wide" }, ["🡐"]) as HTMLButtonElement);
-        this.keyback.addEventListener("click", () => this.back());
+        this.keyback.addEventListener("click", this.back.bind(this));
     }
 
     drawKeyboard() {
@@ -364,12 +371,12 @@ class WordGameManager {
                     this.scrollTileIntoView(tile);
                 }
             }
-            for (; j < this._game.maxWidth; j++) {
+            for (; j < this._game.params.maxWidth; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = "";
                 tile.setAttribute("data-state", "empty");
             }
-            const width = Math.max(j, this._game.maxWidth);
+            const width = Math.max(j, this._game.params.maxWidth);
             while (tiles.length > width) {
                 const tile = tiles.pop();
                 if (tile) {
@@ -380,7 +387,7 @@ class WordGameManager {
         }
 
         if (this.isGameActive()) {
-            for (; i < this._game.limit; i++) {
+            for (; i < this._game.params.limit; i++) {
                 this.row(i);
             }
         } else {
@@ -408,7 +415,7 @@ class WordGameManager {
         this.rows[i] = row;
         this.tiles[i] = [];
 
-        for (let j = 0; j < this._game!.maxWidth; j++) {
+        for (let j = 0; j < this._game!.params.maxWidth; j++) {
             this.initTile(i, j);
         }
         this.board.replaceChildren(...this.rows);
@@ -429,7 +436,7 @@ class WordGameManager {
             "data-state": "empty"
         }) as HTMLDivElement;
 
-        if (this._game && j >= this._game.width) {
+        if (this._game && j >= this._game.params.width) {
             tile.classList.add("word-tile-extra");
         }
 
