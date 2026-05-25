@@ -63,6 +63,7 @@ function startGame() {
     formSeedFixedValue.value = params.stringSeed();
 
     goBack.href = window.location.href + "&m=edit";
+    goBack.innerText = "<-- view/modify rules";
 }
 
 function stopGame() {
@@ -75,6 +76,7 @@ function stopGame() {
     window.history.replaceState({}, '', url.toString());
 
     goBack.href = "/";
+    goBack.innerText = "<-- go back";
 }
 
 const initialSearch = new URL(window.location.href).searchParams;
@@ -179,6 +181,7 @@ if (gameStr) {
     let playInitial = true;
     if (initialSearch.size <= 0 && initialGame.guesses.length < initialGame.params.limit) {
         initialGame.params.toURLSearchParams(initialSearch);
+        manager.notify("Restored last session");
     } else if (initialGame.params.needsNewGame(params)) {
         playInitial = false;
     }

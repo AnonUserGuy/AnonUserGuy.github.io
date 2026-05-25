@@ -107,7 +107,7 @@ function loading(bool: boolean) {
     }
 }
 
-function delay(durationMs: number) {
+function delay(durationMs: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, durationMs));
 }
 

@@ -144,24 +144,20 @@ class WordGameManager {
     enter() {
         if (this._game) {
             const result = this._game.guess(this.input);
-            switch (result) {
-                case GuessResult.Valid:
-                    this.input = "";
-                    this.draw();
-                    return true;
-                case GuessResult.BadLimit:
-                    this.notify("Out of guesses");
-                    return false;
-                case GuessResult.BadRepeat:
-                    this.notify("Already guessed");
-                    return false;
-                case GuessResult.BadWidth:
-                    this.notify("Not enough letters");
-                    return false;
-                case GuessResult.BadWord:
-                    this.notify("Not in word list");
-                    return false;
-            }
+            if (result === GuessResult.Valid) {
+                this.input = "";
+                this.draw();
+                return true;
+            } 
+            this.notify((()=>{
+                switch (result) {
+                    case GuessResult.BadLimit: return "Out of guesses";
+                    case GuessResult.BadRepeat: return "Already guessed";
+                    case GuessResult.BadWidth: return "Not enough letters";
+                    case GuessResult.BadWord: return "Not in word list";
+                }
+            })());
+            this.wiggle(this.row(this._game.guesses.length));
         }
         return false;
     }
@@ -263,7 +259,10 @@ class WordGameManager {
     async notify(str: string) {
         const notification = this.notifications.appendChild(createElementEX("p", {}, [str]));
         await delay(1000);
+        notification.classList.add("word-notification-fading");
+        await delay(500);
         this.notifications.removeChild(notification);
+
     }
 
     initKeyboard() {
@@ -364,15 +363,19 @@ class WordGameManager {
             let j = 0;
             for (; j < this.input.length; j++) {
                 const tile = this.tile(i, j);
+                if (!tile.innerText) {
+                    this.throb(tile);
+                }
                 tile.innerText = this.input.charAt(j);
                 tile.setAttribute("data-state", "typing");
                 if (shouldScroll) {
                     shouldScroll = false;
-                    this.scrollTileIntoView(tile);
+                    this.scrollElementIntoView(tile);
                 }
             }
             for (; j < this._game.params.maxWidth; j++) {
                 const tile = this.tile(i, j);
+                this.unthrob(tile);
                 tile.innerText = "";
                 tile.setAttribute("data-state", "empty");
             }
@@ -446,8 +449,8 @@ class WordGameManager {
         return tile;
     }
 
-    scrollTileIntoView(tile: HTMLDivElement) {
-        const rect = tile.getBoundingClientRect();
+    scrollElementIntoView(element: HTMLElement) {
+        const rect = element.getBoundingClientRect();
         if (rect.y < 0) {
             window.scrollBy(0, rect.y);
             return;
@@ -459,6 +462,28 @@ class WordGameManager {
         if (diff > 0) {
             window.scrollBy(0, diff);
         }
+    }
+
+    async animate(element: HTMLElement, className: string, duration: number) {
+        if (element.classList.contains(className)) {
+            return false;
+        }
+        element.classList.add(className);
+        await delay(duration);
+        element.classList.remove(className);
+        return true;
+    }
+
+    wiggle(element: HTMLElement) {
+        return this.animate(element, "word-wiggle", 500);
+    }
+
+    throb(element: HTMLElement) {
+        return this.animate(element, "word-throb", 250);
+    }
+
+    unthrob(element: HTMLElement) {
+        element.classList.remove("word-throb");
     }
 }
 

@@ -26,64 +26,85 @@
         <a href="/" id="goBack">&lt-- go back</a>
     </div>
 
-    <div class="section" id="formSection">
-        <h2>Customizable Word Game</h2>
-        <form id="form">
-            <p class="text-entries">
-                <label for="formWidth">Word width: </label>
-                <input type="number" id="formWidth" name="w" min="0" max="18" value="5"> ~ 
-                <span>
-                    <input type="checkbox" id="formWidthMaxEnabled"> 
-                    <input type="number" id="formWidthMax" name="wmax" min="0" max="18" value="5" disabled>
-                </span>
-            </p>
-            <p><label for="formLimit">Guess limit: </label><input type="number" id="formLimit" name="l" min="0" max="999" value="6"></p>
-            <p class="text-entries">
-                <span>Guesses must be: </span>
-                <span>
-                    <input type="checkbox" id="formEnforceDictionary" checked><label for="formEnforceDictionary">in dictionary</label>
-                    <input type="hidden" name="nodictionary">
-                </span>
-                <span>
-                    <input type="checkbox" id="formEnforceUnique" name="unique"><label for="formEnforceUnique">unique</label>
-                </span>
-            </p>
-            <div class="selector">
-                <p>
-                    <input type="radio" id="formDifficultyNormal" name="d" value="normal" checked>
-                    <label for="formDifficultyNormal">Normal</label>
+    <div id="formSection">
+        <div class="section">
+            <h2>Customizable Word Game</h2>
+            <form id="form">
+                <p class="text-entries">
+                    <label for="formWidth">Word width: </label>
+                    <input type="number" id="formWidth" name="w" min="0" max="18" value="5"> ~
+                    <span>
+                        <input type="checkbox" id="formWidthMaxEnabled">
+                        <input type="number" id="formWidthMax" name="wmax" min="0" max="18" value="5" disabled>
+                    </span>
                 </p>
                 <p>
-                    <input type="radio" id="formDifficultyHard" name="d" value="hard">
-                    <label for="formDifficultyHard">Hard</label>
+                    <label for="formLimit">Guess limit: </label>
+                    <input type="number" id="formLimit" name="l" min="0" max="999" value="6">
                 </p>
+                <p class="text-entries">
+                    <span>Guesses must be: </span>
+                    <span>
+                        <input type="checkbox" id="formEnforceDictionary" checked>
+                        <label for="formEnforceDictionary">in dictionary</label>
+                        <input type="hidden" name="nodictionary">
+                    </span>
+                    <span>
+                        <input type="checkbox" id="formEnforceUnique" name="unique">
+                        <label for="formEnforceUnique">unique</label>
+                    </span>
+                </p>
+                <div class="selector">
+                    <p>
+                        <input type="radio" id="formDifficultyNormal" name="d" value="normal" checked>
+                        <label for="formDifficultyNormal">Normal</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="formDifficultyHard" name="d" value="hard">
+                        <label for="formDifficultyHard">Hard</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="formDifficultyImpossible" name="d" value="impossible">
+                        <label for="formDifficultyImpossible">Impossible!!!</label>
+                    </p>
+                </div>
+
+                <div class="selector">
+                    <p>
+                        <input type="radio" id="formSeedDaily" name="seed" value="daily" checked>
+                        <label for="formSeedDaily">Daily</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="formSeedRandom" name="seed" value="random">
+                        <label for="formSeedRandom">Random</label>
+                    </p>
+                    <p>
+                        <input type="radio" id="formSeedFixed" name="seed" value="fixed">
+                        <label for="formSeedFixed" id="formSeedFixedLabel">
+                            <input type="text" id="formSeedFixedValue" name="s" placeholder="Seed" tabindex="-1">
+                        </label>
+                    </p>
+                </div>
                 <p>
-                    <input type="radio" id="formDifficultyImpossible" name="d" value="impossible">
-                    <label for="formDifficultyImpossible">Impossible!!!</label>
+                    <input type="submit" id="submit" value="Word Game me!">
                 </p>
-            </div>
-            
-            <div class="selector">
-                <p>
-                    <input type="radio" id="formSeedDaily" name="seed" value="daily" checked>
-                    <label for="formSeedDaily">Daily</label>
-                </p>
-                <p>
-                    <input type="radio" id="formSeedRandom" name="seed" value="random">
-                    <label for="formSeedRandom">Random</label>
-                </p>
-                <p>
-                    <input type="radio" id="formSeedFixed" name="seed" value="fixed">
-                    <label for="formSeedFixed" id="formSeedFixedLabel">
-                        <input type="text" id="formSeedFixedValue" name="s" placeholder="Seed" tabindex="-1">
-                    </label>
-                </p>
-            </div>
+            </form>
+        </div>
+
+        <footer>
             <p>
-                <input type="submit" id="submit" value="Word Game me!">
+                List of all English words courtesy of
+                <a href="https://github.com/dwyl/english-words">
+                    github.com/dwyl/english-words</a>.
             </p>
-        </form>
+            <p>
+                List of common English words courtesy of
+                <a href="https://github.com/first20hours/google-10000-english">
+                    github.com/first20hours/google-10000-english</a>.
+            </p>
+        </footer>
     </div>
+
 
     <div id="wordSection" hidden>
         <div id="wordNotifications" class="word-notifications"></div>

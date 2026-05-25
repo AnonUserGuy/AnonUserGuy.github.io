@@ -340,22 +340,19 @@ table tr>th[colspan] {
 ### customizable_word_game ###
 */
 :root {
-    --word-hover: 10%;
-    --word-active: 20%;
-
     --word-empty-color: grey;
-    --word-empty-color-hover:  color-mix(in srgb, var(--word-empty-color), black var(--word-hover));
-    --word-empty-color-active: color-mix(in srgb, var(--word-empty-color), black var(--word-active));
+    --word-empty-color-hover: #777;
+    --word-empty-color-active: #666;
     --word-typing-color: white;
     --word-absent-color: #444;
-    --word-absent-color-hover:  color-mix(in srgb, var(--word-absent-color), black var(--word-hover));
-    --word-absent-color-active: color-mix(in srgb, var(--word-absent-color), black var(--word-active));
+    --word-absent-color-hover: #333;
+    --word-absent-color-active: #222;
     --word-present-color: DarkKhaki;
-    --word-present-color-hover:  color-mix(in srgb, var(--word-present-color), black var(--word-hover));
-    --word-present-color-active: color-mix(in srgb, var(--word-present-color), black var(--word-active));
+    --word-present-color-hover: #AdA75b;
+    --word-present-color-active: #9d974b;
     --word-correct-color: MediumSeaGreen;
-    --word-correct-color-hover:  color-mix(in srgb, var(--word-correct-color), black var(--word-hover));
-    --word-correct-color-active: color-mix(in srgb, var(--word-correct-color), black var(--word-active));
+    --word-correct-color-hover: #2cA361;
+    --word-correct-color-active: #1c9351;
 
     --word-text-color: white;
     --word-notification-color: white;
@@ -560,4 +557,36 @@ table tr>th[colspan] {
     border-radius: 5px;
     text-align: left;
     margin-top: 0px;
+}
+
+.word-notification-fading {
+    animation: show linear 0.5s reverse forwards;
+}
+
+@keyframes show {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.word-wiggle {
+    animation: wiggle linear 0.5s forwards;
+}
+
+@keyframes wiggle {
+    0% { transform: translateX(0px); }
+    20% { transform: translateX(-2px); }
+    40% { transform: translateX(2px); }
+    60% { transform: translateX(-2px); }
+    80% { transform: translateX(2px); }
+    100% { transform: translateX(0px); }
+}
+
+.word-throb {
+    animation: throb ease-out 0.25s forwards;
+}
+
+@keyframes throb {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
