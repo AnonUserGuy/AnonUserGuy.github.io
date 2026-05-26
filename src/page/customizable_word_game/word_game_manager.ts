@@ -340,7 +340,8 @@ class WordGameManager {
                 this.row(i);
                 continue;
             }
-            for (let j = 0; j < guess.length; j++) {
+            let j = 0;
+            for (; j < guess.length; j++) {
                 const tile = this.tile(i, j);
                 tile.innerText = guess.charAt(j);
                 tile.setAttribute("data-state", (() => {
@@ -350,6 +351,10 @@ class WordGameManager {
                         case LetterQuality.Absent: return "absent";
                     }
                 })());
+            }
+            for (; j < this._game.params.maxWidth; j++) {
+                const tile = this.tile(i, j);
+                tile.setAttribute("data-state", "skipped");
             }
         }
 
@@ -365,16 +370,13 @@ class WordGameManager {
                 row.classList.add("word-row-typing");
                 for (; j < this.input.length; j++) {
                     const tile = this.tile(i, j);
-                    if (!tile.innerText) {
-                        this.throb(tile);
-                    }
                     tile.innerText = this.input.charAt(j);
                     tile.setAttribute("data-state", "typing");
                 }
             }
             for (; j < this._game.params.maxWidth; j++) {
                 const tile = this.tile(i, j);
-                this.unthrob(tile);
+
                 tile.innerText = "";
                 tile.setAttribute("data-state", "empty");
             }
@@ -414,16 +416,19 @@ class WordGameManager {
     }
 
     initRow(i: number) {
-        const row = createElementEX("div", { "class": "word-row" }) as HTMLDivElement;
-        this.rows[i] = row;
-        this.tiles[i] = [];
+        let row: HTMLDivElement | null = null;
 
-        for (let j = 0; j < this._game!.params.maxWidth; j++) {
-            this.initTile(i, j);
+        for (let m = this.rows.length; m <= i; m++) {
+            row = createElementEX("div", { "class": "word-row" }) as HTMLDivElement;
+            this.rows[m] = row;
+            this.tiles[m] = [];
+            if (this._game) {
+                this.initTile(m, this._game.params.maxWidth - 1);
+            }
+            this.board.appendChild(row);
         }
-        this.board.replaceChildren(...this.rows);
 
-        return row;
+        return row || this.rows[i];
     }
 
     tile(i: number, j: number) {
@@ -434,19 +439,23 @@ class WordGameManager {
     }
 
     initTile(i: number, j: number) {
-        const tile = createElementEX("span", {
-            "class": "word-tile",
-            "data-state": "empty"
-        }) as HTMLDivElement;
+        let tile: HTMLDivElement | null = null;
 
-        if (this._game && j >= this._game.params.width) {
-            tile.classList.add("word-tile-extra");
+        for (let m = this.tiles[i].length; m <= j; m++) {
+            tile = createElementEX("span", {
+                "class": "word-tile",
+                "data-state": "empty"
+            }) as HTMLDivElement;
+
+            if (this._game && m >= this._game.params.width) {
+                tile.classList.add("word-tile-extra");
+            }
+
+            this.tiles[i][m] = tile;
+            this.rows[i].appendChild(tile);
         }
 
-        this.tiles[i][j] = tile;
-        this.rows[i].replaceChildren(...this.tiles[i]);
-
-        return tile;
+        return tile || this.tiles[i][j];
     }
 
     scrollElementIntoView(element: HTMLElement) {
@@ -476,14 +485,6 @@ class WordGameManager {
 
     wiggle(element: HTMLElement) {
         return this.animate(element, "word-wiggle", 500);
-    }
-
-    throb(element: HTMLElement) {
-        return this.animate(element, "word-throb", 250);
-    }
-
-    unthrob(element: HTMLElement) {
-        element.classList.remove("word-throb");
     }
 }
 
