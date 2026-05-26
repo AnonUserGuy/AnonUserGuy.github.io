@@ -10,6 +10,7 @@ class WordGameManager {
 
     board: HTMLDivElement;
     rows: HTMLDivElement[] = [];
+    maxRowScrolledTo: number = -1;
     tiles: HTMLDivElement[][] = [];
 
     keyboard: HTMLDivElement;
@@ -146,10 +147,13 @@ class WordGameManager {
             const result = this._game.guess(this.input);
             if (result === GuessResult.Valid) {
                 this.input = "";
+                const row = this.row(this._game.guesses.length - 1);
+                row.classList.remove("word-row-typing");
+                this.scrollElementIntoView(row);
                 this.draw();
                 return true;
-            } 
-            this.notify((()=>{
+            }
+            this.notify((() => {
                 switch (result) {
                     case GuessResult.BadLimit: return "Out of guesses";
                     case GuessResult.BadRepeat: return "Already guessed";
@@ -359,18 +363,20 @@ class WordGameManager {
         if (this.input || this.rows[i]) {
             const row = this.row(i);
             const tiles = this.tiles[i];
-            let shouldScroll = true;
             let j = 0;
-            for (; j < this.input.length; j++) {
-                const tile = this.tile(i, j);
-                if (!tile.innerText) {
-                    this.throb(tile);
+            if (this.input.length) {
+                if (this.maxRowScrolledTo < i) {
+                    this.scrollElementIntoView(row);
+                    this.maxRowScrolledTo = i;
                 }
-                tile.innerText = this.input.charAt(j);
-                tile.setAttribute("data-state", "typing");
-                if (shouldScroll) {
-                    shouldScroll = false;
-                    this.scrollElementIntoView(tile);
+                row.classList.add("word-row-typing");
+                for (; j < this.input.length; j++) {
+                    const tile = this.tile(i, j);
+                    if (!tile.innerText) {
+                        this.throb(tile);
+                    }
+                    tile.innerText = this.input.charAt(j);
+                    tile.setAttribute("data-state", "typing");
                 }
             }
             for (; j < this._game.params.maxWidth; j++) {
@@ -406,6 +412,7 @@ class WordGameManager {
     resetBoard() {
         this.board.replaceChildren();
         this.rows = [];
+        this.maxRowScrolledTo = -1;
         this.tiles = [];
     }
 
@@ -434,7 +441,7 @@ class WordGameManager {
     }
 
     initTile(i: number, j: number) {
-        const tile = createElementEX("div", {
+        const tile = createElementEX("span", {
             "class": "word-tile",
             "data-state": "empty"
         }) as HTMLDivElement;
