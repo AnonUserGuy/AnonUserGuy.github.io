@@ -1,4 +1,4 @@
-import { GuessResult, LetterQuality, State, WordGame } from "./word_game";
+import { LetterQuality, State, WordGame } from "./word_game";
 
 class WordGameManager {
     private _game?: WordGame;
@@ -145,7 +145,7 @@ class WordGameManager {
     enter() {
         if (this._game) {
             const result = this._game.guess(this.input);
-            if (result === GuessResult.Valid) {
+            if (!result) {
                 this.input = "";
                 const row = this.row(this._game.guesses.length - 1);
                 row.classList.remove("word-row-typing");
@@ -153,14 +153,7 @@ class WordGameManager {
                 this.draw();
                 return true;
             }
-            this.notify((() => {
-                switch (result) {
-                    case GuessResult.BadLimit: return "Out of guesses";
-                    case GuessResult.BadRepeat: return "Already guessed";
-                    case GuessResult.BadWidth: return "Not enough letters";
-                    case GuessResult.BadWord: return "Not in word list";
-                }
-            })());
+            this.notify(result);
             this.wiggle(this.row(this._game.guesses.length));
         }
         return false;
@@ -315,7 +308,7 @@ class WordGameManager {
         }
         this.keyboard.hidden = false;
 
-        this._game.letters.forEach((c, quality) => {
+        for (const [c, quality] of this._game.letters) {
             this.keys[c].setAttribute("data-state", (() => {
                 switch (quality) {
                     case LetterQuality.Correct: return "correct";
@@ -323,7 +316,7 @@ class WordGameManager {
                     case LetterQuality.Absent: return "absent";
                 }
             })());
-        });
+        }
     }
 
     resetKeyboard() {

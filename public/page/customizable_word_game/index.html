@@ -43,15 +43,19 @@
                     <input type="number" id="formLimit" name="l" min="0" max="999" value="6">
                 </p>
                 <p class="text-entries">
-                    <span>Guesses must be: </span>
+                    <span>Guesses must: </span>
                     <span>
                         <input type="checkbox" id="formEnforceDictionary" checked>
-                        <label for="formEnforceDictionary">in dictionary</label>
+                        <label for="formEnforceDictionary">be in dictionary</label>
                         <input type="hidden" name="nodictionary">
                     </span>
                     <span>
                         <input type="checkbox" id="formEnforceUnique" name="unique">
-                        <label for="formEnforceUnique">unique</label>
+                        <label for="formEnforceUnique">be unique</label>
+                    </span>
+                    <span>
+                        <input type="checkbox" id="formHardmode" name="hard">
+                        <label for="formHardmode">use previous hints</label>
                     </span>
                 </p>
                 <div class="selector">

@@ -23,6 +23,7 @@ class WordGameParams {
     enforceWidth = true;
     enforceDictionary = true;
     enforceUnique = false;
+    hardmode = true;
 
     static fromURLSearchParams(search: URLSearchParams, oldParams?: WordGameParams) {
         const params = new WordGameParams;
@@ -61,6 +62,7 @@ class WordGameParams {
 
         params.enforceDictionary = !search.has("nodictionary");
         params.enforceUnique = search.has("unique");
+        params.hardmode = search.has("hard");
 
         if (search.has("d")) {
             const d = (() => {
@@ -124,6 +126,7 @@ class WordGameParams {
         search.set("l", this.limit.toString());
         if (!this.enforceDictionary) search.set("nodictionary", "on");
         if (this.enforceUnique) search.set("unique", "on");
+        if (this.hardmode) search.set("hard", "on");
         search.set("d", (() => {
             switch (this.difficulty) {
                 case Difficulty.Normal: return "normal";

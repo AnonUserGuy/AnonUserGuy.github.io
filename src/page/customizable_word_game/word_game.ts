@@ -6,14 +6,6 @@ enum State {
     Won
 }
 
-enum GuessResult {
-    BadLimit = -4,
-    BadRepeat = -3,
-    BadWidth = -2,
-    BadWord = -1,
-    Valid = 0
-}
-
 enum LetterQuality {
     Absent,
     Present,
@@ -21,7 +13,7 @@ enum LetterQuality {
 }
 
 class LetterCounts {
-    private _data: { [index: string]: number } = {};
+    private readonly _data: { [index: string]: number } = {};
 
     constructor(word?: string) {
         if (word) {
@@ -44,10 +36,29 @@ class LetterCounts {
     get(c: string) {
         return this._data[c] || 0;
     }
+
+    set(c: string, count: number) {
+        return this._data[c] = count;
+    }
+
+    merge(other: LetterCounts) {
+        for (const [c, count] of other) {
+            if (!this._data[c] || this._data[c] < count) {
+                this._data[c] = count;
+            }
+        }
+        return this;
+    }
+
+    *[Symbol.iterator](): Iterator<[string, number]> {
+        for (const c in this._data) {
+            yield [c, this._data[c]];
+        }
+    }
 }
 
 class LetterQualities {
-    private _data: { [index: string]: LetterQuality } = {};
+    private readonly _data: { [index: string]: LetterQuality } = {};
 
     set(c: string, quality: LetterQuality) {
         if (!this._data[c] || quality > this._data[c]) {
@@ -60,9 +71,9 @@ class LetterQualities {
         return this._data[c];
     }
 
-    forEach(fn: (c: string, quality: LetterQuality) => any) {
+    *[Symbol.iterator](): Iterator<[string, LetterQuality]> {
         for (const c in this._data) {
-            fn(c, this._data[c]);
+            yield [c, this._data[c]];
         }
     }
 }
@@ -75,6 +86,9 @@ class WordGame {
     guesses: string[] = [];
     qualities: LetterQuality[][] = [];
     letters: LetterQualities = new LetterQualities();
+
+    greens: boolean[] = [];
+    yellows: LetterCounts = new LetterCounts();
 
     state: State = State.InProgress;
     continuedState: State = State.InProgress;
@@ -172,26 +186,35 @@ class WordGame {
         return this.state <= this.continuedState;
     }
 
-    guess(word: string) {
+    guess(word: string): string {
         word = word.toLowerCase();
 
         if (this._params.enforceWidth && (word.length < this._params.width || word.length > this._params.maxWidth)) {
-            return GuessResult.BadWidth;
+            return "Not enough letters";
         } else if (this._params.enforceDictionary && !this.dictionaryHas(word)) {
-            return GuessResult.BadWord;
+            return "Not in dictionary";
         } else if (this._params.enforceUnique && this.guesses.indexOf(word) !== -1) {
-            return GuessResult.BadRepeat;
+            return "Already guessed";
         } else if (!this.isActive()) {
-            return GuessResult.BadLimit;
+            return "Out of guesses";
+        } 
+        
+        if (this._params.hardmode) {
+            const res = this.checkHardmode(word);
+            if (res) {
+                return res;
+            }
         }
 
-        return this.forceGuess(word);
+        this.forceGuess(word);
+        return "";
     }
 
     forceGuess(word: string) {
         word = word.toLowerCase();
 
         const letterCounts = new LetterCounts();
+        const yellows = new LetterCounts();
         const quality: LetterQuality[] = [];
 
         let won = word.length === this._solution.length;
@@ -201,6 +224,9 @@ class WordGame {
             if (this._solution.charAt(i) === c) {
                 quality[i] = LetterQuality.Correct;
                 this.letters.set(c, LetterQuality.Correct);
+
+                this.greens[i] = true;
+                yellows.add(c);
             } else {
                 won = false;
                 const guessCount = letterCounts.get(c);
@@ -227,6 +253,7 @@ class WordGame {
                     } else {
                         quality[i] = LetterQuality.Present;
                         this.letters.set(c, LetterQuality.Present);
+                        yellows.add(c);
                     }
 
                 } else {
@@ -236,6 +263,8 @@ class WordGame {
             }
             letterCounts.add(c);
         }
+        this.yellows.merge(yellows);
+
         this.guesses.push(word);
         this.qualities.push(quality);
 
@@ -244,8 +273,45 @@ class WordGame {
         } else if (this.state !== State.Won && this.guesses.length >= this._params.limit) {
             this.state = State.Lost;
         }
+    }
 
-        return GuessResult.Valid;
+    checkHardmode(word: string) {
+        for (let i = 0; i < this.greens.length; i++) {
+            if (!this.greens[i]) {
+                continue;
+            }
+            const c = this.solution.charAt(i);
+            if (word.charAt(i) !== c) {
+                return `${i + 1}${this.getOrdinal(i + 1)} letter must be ${c.toUpperCase()}`;
+            }
+        }
+
+        const letterCounts = new LetterCounts(word);
+
+        for (const [c, count] of this.yellows) {
+            if (letterCounts.get(c) < count) {
+                if (count === 1) {
+                    return `Guess must contain ${c.toUpperCase()}`;
+                } else {
+                    return `Guess must contain ${count} ${c.toUpperCase()}'s`;
+                }
+            }
+        }
+        return "";
+    }
+
+    private getOrdinal(n: number) {
+        if (n % 10 == 1 && n % 100 != 11) {
+            return 'st';
+        }
+        else if (n % 10 == 2 && n % 100 != 12) {
+            return 'nd';
+        }
+        else if (n % 10 == 3 && n % 100 != 13) {
+            return 'rd';
+        }
+
+        return 'th';
     }
 
     toString(): string {
@@ -304,4 +370,4 @@ class WordGame {
     }
 }
 
-export { State, GuessResult, LetterQuality, LetterCounts, LetterQualities, WordGame };
+export { State, LetterQuality, LetterCounts, LetterQualities, WordGame };
