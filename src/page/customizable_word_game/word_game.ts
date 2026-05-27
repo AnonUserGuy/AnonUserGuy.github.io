@@ -112,6 +112,8 @@ class WordGame {
         return {
             guesses: this.guesses,
             solution: this.solution,
+            continuedState: this.continuedState,
+            gaveUp: this.gaveUp,
             params: this.params
         }
     }
@@ -127,6 +129,8 @@ class WordGame {
         for (const guess of guesses) {
             game.forceGuess(guess);
         }
+        game.continuedState = obj.continuedState || State.InProgress;
+        game.gaveUp = !!(obj.gaveUp);
         return game;
     }
 
@@ -183,7 +187,11 @@ class WordGame {
     }
 
     isActive(): boolean {
-        return this.state <= this.continuedState;
+        return !this.gaveUp && this.state <= this.continuedState;
+    }
+
+    shouldLoad(): boolean {
+        return this.isActive() && this.state < State.Won; 
     }
 
     guess(word: string): string {

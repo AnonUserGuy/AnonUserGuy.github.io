@@ -23,7 +23,7 @@ class WordGameParams {
     enforceWidth = true;
     enforceDictionary = true;
     enforceUnique = false;
-    hardmode = true;
+    hardmode = false;
 
     static fromURLSearchParams(search: URLSearchParams, oldParams?: WordGameParams) {
         const params = new WordGameParams;

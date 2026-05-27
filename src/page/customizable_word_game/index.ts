@@ -175,22 +175,46 @@ const manager: WordGameManager = new WordGameManager(() => {
 
 }, wordBoard, wordKeyboard, wordButtons, wordNotifications);
 
-const gameStr = localStorage.getItem("wordGame");
-if (gameStr) {
-    const initialGame = WordGame.fromJSON(dictionary, gameStr);
-    let playInitial = true;
-    if (initialSearch.size <= 0 && initialGame.guesses.length < initialGame.params.limit) {
-        initialGame.params.toURLSearchParams(initialSearch);
-        manager.notify("Restored last session");
-    } else if (initialGame.params.needsNewGame(params)) {
-        playInitial = false;
+const continueSection = document.getElementById("continueSection") as HTMLDivElement;
+const continueNew = document.getElementById("continueNew") as HTMLButtonElement;
+const continueResume = document.getElementById("continueResume") as HTMLButtonElement;
+
+continueNew.addEventListener("click", () => {
+    formSection.hidden = false;
+    continueSection.hidden = true;
+});
+
+continueResume.addEventListener("click", () => {
+    continueSection.hidden = true;
+    loadInitialGame();
+    startGame();
+});
+
+function loadInitialGame() {
+    if (!initialGame) {
+        formSection.hidden = false;
+        wordSection.hidden = true;
+        return;
     }
-    if (playInitial) {
-        updateForm();
-        params = initialGame.params;
-        manager.active = true; // TODO: fix this
-        manager.game = initialGame;
-        manager.active = false;
+    params = initialGame.params;
+    params.toURLSearchParams(initialSearch);
+    updateForm();
+
+    manager.active = true; // TODO: fix this
+    manager.game = initialGame;
+    manager.active = false;
+    initialGame = null;
+}
+
+const initialGameStr = localStorage.getItem("wordGame");
+let initialGame: WordGame | null = null;
+if (initialGameStr) {
+    initialGame = WordGame.fromJSON(dictionary, initialGameStr);
+    if (initialSearch.size <= 0 && initialGame.shouldLoad()) {
+        formSection.hidden = true;
+        continueSection.hidden = false;
+    } else if (!initialGame.params.needsNewGame(params)) {
+        loadInitialGame();
     }
 }
 if (initialSearch.size > 0 && initialSearch.get("m") !== "edit") {
