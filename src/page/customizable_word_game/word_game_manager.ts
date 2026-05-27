@@ -70,6 +70,9 @@ class WordGameManager {
         let key = event.key;
         let target: HTMLButtonElement;
         if (key.length === 1) {
+            if (event.ctrlKey) {
+                return;
+            }
             const code = key.charCodeAt(0);
             if (code >= 64 && code <= 90) {
                 key = String.fromCharCode(code + 32);
