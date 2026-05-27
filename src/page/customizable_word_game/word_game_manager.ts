@@ -309,6 +309,9 @@ class WordGameManager {
         this.keyboard.hidden = false;
 
         for (const [c, quality] of this._game.letters) {
+            if (!this.keys[c]) {
+                continue;
+            }
             this.keys[c].setAttribute("data-state", (() => {
                 switch (quality) {
                     case LetterQuality.Correct: return "correct";
