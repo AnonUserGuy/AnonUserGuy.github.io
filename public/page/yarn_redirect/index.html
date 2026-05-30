@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Yarn Redirect Page</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+    <h1>
+        <a id="video">click here for video</a>
+    </h1>
+    <h1>
+        <a id="gif">click here for gif</a>
+    </h1>
+
+    <script>
+        const url = new URL(window.location.href);
+        const search = url.searchParams;
+        if (!search.has("t")) {
+            throw new Error("no target");
+        }
+        const target = search.get("t")
+
+        const video = document.getElementById("video");
+        const gif = document.getElementById("gif");
+
+        video.href = `https://y.yarn.co/${target}.mp4`;
+        gif.href = `https://y.yarn.co/${target}_text.gif`;
+    </script>
+</body>
+
+</html>
