@@ -12,6 +12,8 @@ enum Difficulty {
 }
 
 class WordGameParams {
+    static readonly startDate = new Date(2026, 4, 15);
+
     difficulty: Difficulty = Difficulty.Normal;
     seed: string = "";
     extraSeed: number = 0;
@@ -79,11 +81,7 @@ class WordGameParams {
 
         switch (search.get("seed")!) {
             case "daily":
-                const start = new Date(2026, 4, 15);
-                const today = new Date();
-                const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-
-                params.seed = diff.toString();
+                params.seed = this.getSeedFromDate(new Date()).toString();
                 params.extraSeed = 0;
 
                 search.set("s", params.stringSeed());
@@ -95,7 +93,17 @@ class WordGameParams {
                 search.set("s", params.stringSeed());
                 break;
             default:
-                if (search.has("s")) {
+                if (search.get("date") && search.get("seed") !== "fixed") {
+                    const dateStr = search.get("date")!;
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+
+                    params.seed = this.getSeedFromDate(date).toString();
+                    params.extraSeed = 0;
+
+                    search.set("s", params.stringSeed());
+
+                } else if (search.has("s")) {
                     const s = search.get("s")!;
                     const reg = /^(.*)_(\d+)$/;
                     const match = s.match(reg);
@@ -110,9 +118,28 @@ class WordGameParams {
                 }
                 break;
         }
+        search.delete("date");
         search.delete("seed");
 
         return params;
+    }
+
+    static getSeedFromDate(d: Date) {
+        return Math.floor((d.valueOf() - this.startDate.valueOf()) / (1000 * 60 * 60 * 24));
+    }
+
+    static getDateFromSeed(n: number | string) {
+        if (typeof n === "string") {
+            n = parseInt(n);
+            if (isNaN(n)) {
+                return null;
+            }
+        }
+        return new Date(this.startDate.valueOf() + n * (1000 * 60 * 60 * 24));
+    }
+
+    date() {
+        return WordGameParams.getDateFromSeed(this.seed);
     }
 
     toURLSearchParams(search?: URLSearchParams) {

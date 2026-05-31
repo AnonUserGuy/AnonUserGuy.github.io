@@ -19,14 +19,22 @@ function updateForm() {
     formDeserialize(form, initialSearch);
 
     if (initialSearch.has("s")) {
+        const s = initialSearch.get("s")!;
+        const date = WordGameParams.getDateFromSeed(s);
+        if (date) {
+            formSeedDateValue.value = date.toISOString().slice(0, 10);
+        }
         formSeedFixed.checked = true;
     }
+    formSeedDateValue.value ||= new Date().toISOString().slice(0, 10);
 
     if (initialSearch.has("nodictionary")) {
         formEnforceDictionary.checked = false;
     } else {
         formEnforceDictionary.checked = true;
     }
+
+
 }
 
 function startGame() {
@@ -61,6 +69,10 @@ function startGame() {
 
     formSeedFixed.checked = true;
     formSeedFixedValue.value = params.stringSeed();
+    const date = params.date();
+    if (date) {
+        formSeedDateValue.value = date.toISOString().slice(0, 10);
+    }
 
     goBack.href = window.location.href + "&m=edit";
     goBack.innerText = "<-- view/modify rules";
@@ -102,6 +114,8 @@ const formEnforceDictionary = document.getElementById("formEnforceDictionary") a
 
 const formSeedDaily = document.getElementById("formSeedDaily") as HTMLInputElement;
 const FormSeedRandom = document.getElementById("formSeedRandom") as HTMLInputElement;
+const formSeedDate = document.getElementById("formSeedDate") as HTMLInputElement;
+const formSeedDateValue = document.getElementById("formSeedDateValue") as HTMLInputElement;
 const formSeedFixed = document.getElementById("formSeedFixed") as HTMLInputElement;
 const formSeedFixedValue = document.getElementById("formSeedFixedValue") as HTMLInputElement;
 let params = WordGameParams.fromURLSearchParams(initialSearch);
@@ -140,18 +154,20 @@ if (!initialSearch.has("wmax")) {
 }
 
 function formSeedOnChange() {
-    if (formSeedFixed.checked) {
-        formSeedFixedValue.tabIndex = 0;
-    } else {
-        formSeedFixedValue.tabIndex = -1;
-    }
+    formSeedDateValue.tabIndex = formSeedDate.checked ? 0 : -1;
+    formSeedFixedValue.tabIndex = formSeedFixed.checked ? 0 : -1;
 }
 formSeedDaily.addEventListener("change", formSeedOnChange);
 FormSeedRandom.addEventListener("change", formSeedOnChange);
+formSeedDate.addEventListener("change", formSeedOnChange);
 formSeedFixed.addEventListener("change", formSeedOnChange);
 formSeedOnChange();
 
-formSeedFixedValue.addEventListener("click", (event) => {
+formSeedDateValue.addEventListener("click", () => {
+    formSeedDateValue.tabIndex = 0;
+    formSeedDate.checked = true;
+});
+formSeedFixedValue.addEventListener("click", () => {
     formSeedFixedValue.tabIndex = 0;
     formSeedFixed.checked = true;
 });
