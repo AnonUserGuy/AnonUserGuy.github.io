@@ -143,8 +143,8 @@ function commentsPrint() {
                     "target": "_blank"
                 }, [item.text]);
 
-            } else if (item.mention) {
-                const mention = item.mention;
+            } else if (item.mention || item.channelLink) {
+                const mention = item.mention || item.channelLink;
                 return createElementEX("span", {}, [
                     createElementEX("a", {
                         "href": `https://www.youtube.com/channel/${mention.externalChannelId}`,
@@ -158,6 +158,13 @@ function commentsPrint() {
                     "src": emoji.customEmojiUrl,
                     "alt": "custom emoji "
                 });
+
+            } else if (item.link) {
+                const link = item.link;
+                return createElementEX("a", {
+                    "href": link.linkUrl,
+                    "target": "_blank"
+                }, [item.text]);
 
             } else if (item.text === "\n") {
                 return createElementEX("br");
