@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <!--     <meta name="description" content="View Terraria minimap (.map) files!">
+    <meta name="keywords" content="Terraria">
+    <meta name="author" content="AnonUserGuy">
+
+    <meta property="og:title" content="Terraria .Map File Viewer">
+    <meta property="og:description" content="View Terraria minimap (.map) files!">
+    <meta property="og:image" content="https://anonuserguy.github.io/media/images/BigChungus.png">
+    <meta property="og:url" content="https://anonuserguy.github.io/terraria_map/"> -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tab to Space Converter</title>
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <script src="/js/global.js"></script>
+    <script type="module" src="./index.js"></script>
+</head>
+
+<body>
+    <div>
+        <a href="/">&lt-- go back</a>
+    </div>
+
+    <div class="section section-textarea">
+        <h2>Input</h2>
+        <p><textarea id="input"></textarea></p>
+        <p><label for="tabWidth">Tab width: </label><input id="tabWidth" type="number" value="8" min="0" step="1" size="3"></p>
+        <p><button id="convert">Convert tabs to spaces</button></p>
+    </div>
+
+    <div class="section section-textarea">
+        <h2>Output</h2>
+        <p><textarea id="output" readonly></textarea></p>
+        <p><button id="copy">Copy output</button></p>
+    </div>
+</body>
+
+</html>
