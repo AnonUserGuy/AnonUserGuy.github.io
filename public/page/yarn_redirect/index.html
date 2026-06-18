@@ -19,6 +19,9 @@
     <h1>
         <a id="gif">click here for gif</a>
     </h1>
+    <h1>
+        <a id="frontend">click here to proceed to page</a>
+    </h1>
 
     <script>
         const url = new URL(window.location.href);
@@ -30,9 +33,11 @@
 
         const video = document.getElementById("video");
         const gif = document.getElementById("gif");
+        const frontend = document.getElementById("frontend");
 
         video.href = `https://y.yarn.co/${target}.mp4`;
         gif.href = `https://y.yarn.co/${target}_text.gif`;
+        frontend.href = `https://getyarn.io/yarn-clip/${target}?redirect`;
     </script>
 </body>
 
