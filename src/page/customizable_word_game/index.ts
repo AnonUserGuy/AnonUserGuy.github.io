@@ -1,7 +1,6 @@
 import { WordGame } from "./word_game";
 import { WordGameParams } from "./word_game_params";
 import { WordGameManager } from "./word_game_manager";
-import _dictionary from "./dictionary.json";
 
 function formDeserialize(form: HTMLFormElement, params: URLSearchParams) {
     for (const [key, val] of params) {
@@ -33,8 +32,6 @@ function updateForm() {
     } else {
         formEnforceDictionary.checked = true;
     }
-
-
 }
 
 function startGame() {
@@ -102,7 +99,7 @@ goBack.addEventListener("click", (event) => {
     }
 });
 
-const dictionary = _dictionary as string[][][];
+const dictionary = fetch("/customizable_word_game/dictionary.json").then((res) => res.json()) as Promise<string[][][]>;
 const formSection = document.getElementById("formSection") as HTMLDivElement;
 const form = document.getElementById("form") as HTMLFormElement;
 
@@ -238,6 +235,7 @@ if (initialSearch.size > 0 && initialSearch.get("m") !== "edit") {
 }
 
 (window as any).dictionary = dictionary;
+dictionary.then((dict) => (window as any).dict = dict);
 (window as any).manager = manager;
 (window as any).WordGame = WordGame;
 

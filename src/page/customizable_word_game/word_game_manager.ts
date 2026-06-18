@@ -6,6 +6,7 @@ class WordGameManager {
 
     isTabbed: boolean = false;
     active: boolean = false;
+    entering: boolean = false;
     input: string = "";
 
     board: HTMLDivElement;
@@ -30,7 +31,6 @@ class WordGameManager {
 
     constructor(gameGenerator: () => WordGame, board?: HTMLDivElement, keyboard?: HTMLDivElement, buttons?: HTMLDivElement, notifications?: HTMLDivElement) {
         this.gameGenerator = gameGenerator;
-        //this._game = this.gameGenerator();
 
         this.board = board || createElementEX("div", { "class": "word-board" }) as HTMLDivElement;
         this.keyboard = keyboard || createElementEX("div", { "class": "word-keyboard" }) as HTMLDivElement;
@@ -61,7 +61,7 @@ class WordGameManager {
     }
 
     keyDown(event: KeyboardEvent) {
-        if (!this.isGameActive()) {
+        if (!this.isGameActive() || this.entering) {
             return;
         }
         if (event.repeat) {
@@ -137,6 +137,9 @@ class WordGameManager {
     }
 
     type(c: string) {
+        if (this.entering) {
+            return false;
+        }
         if (this._game && (!this._game.params.enforceWidth || this.input.length < this._game.params.maxWidth)) {
             this.input += c;
             this.draw();
@@ -145,9 +148,16 @@ class WordGameManager {
         return false;
     }
 
-    enter() {
+    async enter() {
+        if (this.entering) {
+            return false;
+        }
         if (this._game) {
-            const result = this._game.guess(this.input);
+            this.entering = true;
+            loading(true);
+            const result = await this._game.guess(this.input);
+            this.entering = false;
+            loading(false);
             if (!result) {
                 this.input = "";
                 const row = this.row(this._game.guesses.length - 1);
@@ -163,6 +173,9 @@ class WordGameManager {
     }
 
     back() {
+        if (this.entering) {
+            return false;
+        }
         if (this.input.length > 0) {
             this.input = this.input.slice(0, -1);
             this.draw();
@@ -219,6 +232,12 @@ class WordGameManager {
         this.buttonContinue.disabled = this._game.gaveUp || this._game.continuedState >= this._game.state;
         this.buttonGiveUp.hidden = this._game.gaveUp || this._game.state >= State.Won;
         this.buttonNewGame.hidden = !this.buttonGiveUp.hidden;
+
+        if (this._game.gaveUp && !this.notificationGiveUp) {
+            if (this._game.solution !== undefined) {
+                this.notificationGiveUp = this.notifications.appendChild(createElementEX("p", {}, [this._game.solution.toUpperCase()]));
+            }
+        }
     }
 
     continue() {
@@ -246,7 +265,6 @@ class WordGameManager {
         if (!this._game) {
             return;
         }
-        this.notificationGiveUp = this.notifications.appendChild(createElementEX("p", {}, [this._game.solution.toUpperCase()]));
         this._game.gaveUp = true;
         this._game.continuedState = State.InProgress;
         this.draw();
@@ -295,7 +313,7 @@ class WordGameManager {
         this.keyenter = createElementEX("button", { "class": "word-key word-key-wide" }, ["⤶"]) as HTMLButtonElement;
         row!.prepend(this.keyenter);
         this.keyenter.addEventListener("click", this.enter.bind(this));
-        this.keyback = row!.appendChild(createElementEX("button", { "class": "word-key word-key-wide" }, ["🡐"]) as HTMLButtonElement);
+        this.keyback = row!.appendChild(createElementEX("button", { "class": "word-key word-key-wide" }, ["←"]) as HTMLButtonElement);
         this.keyback.addEventListener("click", this.back.bind(this));
     }
 

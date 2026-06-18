@@ -198,16 +198,16 @@ class WordGameParams {
         this.extraSeed++;
     }
 
-    getWord(dictionary: string[][][]) {
+    async getWord(dictionary: Promise<string[][][]>) {
         const rng = random(this.realSeed());
         let word: string;
         switch (this.difficulty) {
             case Difficulty.Normal:
-                word = WordGameParams.randomDictionaryWord(dictionary.slice(this.width, this.maxWidth + 1).map(arr => arr[1]), rng);
+                word = WordGameParams.randomDictionaryWord((await dictionary).slice(this.width, this.maxWidth + 1).map(arr => arr[1]), rng);
                 break;
             case Difficulty.Hard:
                 rng();
-                word = WordGameParams.randomDictionaryWord(dictionary.slice(this.width, this.maxWidth + 1).flat(), rng);
+                word = WordGameParams.randomDictionaryWord((await dictionary).slice(this.width, this.maxWidth + 1).flat(), rng);
                 break;
             case Difficulty.Impossible:
                 word = WordGameParams.randomWord(
@@ -228,17 +228,17 @@ class WordGameParams {
         return String.fromCharCode(...codes);
     }
 
-    static randomDictionaryWord(dictionary: string[][], random: RandomNumberGenerator = Math.random): string {
-        const total = dictionary.reduce(((acc, arr) => acc + arr.length), 0);
+    static randomDictionaryWord(dict: string[][], random: RandomNumberGenerator = Math.random): string {
+        const total = dict.reduce(((acc, arr) => acc + arr.length), 0);
         let randVal = Math.floor(random() * total);
 
         let i = 0;
-        while (randVal > dictionary[i].length) {
-            randVal -= dictionary[i].length;
+        while (randVal > dict[i].length) {
+            randVal -= dict[i].length;
             i++;
         }
 
-        return dictionary[i][randVal];
+        return dict[i][randVal];
     }
 
     clone() {

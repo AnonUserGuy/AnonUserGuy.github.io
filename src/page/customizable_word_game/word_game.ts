@@ -79,10 +79,11 @@ class LetterQualities {
 }
 
 class WordGame {
-    dictionary: string[][][];
+    dictionary: Promise<string[][][]>;
 
-    private _solution!: string;
-    private _letterCounts!: LetterCounts;
+    readonly solutionPromise?: Promise<string>;
+    private _solution?: string;
+    private _letterCounts?: LetterCounts;
     guesses: string[] = [];
     qualities: LetterQuality[][] = [];
     letters: LetterQualities = new LetterQualities();
@@ -96,15 +97,13 @@ class WordGame {
 
     private _params!: WordGameParams;
 
-    constructor(dictionary: string[][][], params: WordGameParams, solution?: string) {
+    constructor(dictionary: Promise<string[][][]>, params: WordGameParams, solution?: string) {
         this.dictionary = dictionary;
         this.params = params;
         if (solution !== undefined) {
             this.solution = solution;
-        } else if (this.dictionary[this.params.width]) {
-            this.solution = params.getWord(dictionary);
         } else {
-            this.solution = "a".repeat(this.params.width);
+            this.solutionPromise = this.params.getWord(this.dictionary).then((word) => {this.solution = word}) as Promise<string>;
         }
     }
 
@@ -118,7 +117,7 @@ class WordGame {
         }
     }
 
-    static fromJSON(dictionary: string[][][], obj: any) {
+    static fromJSON(dictionary: Promise<string[][][]>, obj: any) {
         if (typeof obj === "string") {
             obj = JSON.parse(obj);
         }
@@ -131,15 +130,16 @@ class WordGame {
         }
         game.continuedState = obj.continuedState || State.InProgress;
         game.gaveUp = !!(obj.gaveUp);
+        
         return game;
     }
 
-    get solution() {
+    get solution(): string | undefined {
         return this._solution;
     }
     set solution(solution: string) {
         this._solution = solution;
-        this._letterCounts = new LetterCounts(this._solution);
+        this._letterCounts = new LetterCounts(solution);
     }
 
     get letterCounts() {
@@ -162,9 +162,10 @@ class WordGame {
         }
     }
 
-    dictionaryHas(word: string): boolean {
-        return word === this._solution ||
-            !!this.dictionary[word.length] && this.dictionary[word.length]!.some(arr => WordGame.binarySearch(arr, word) !== -1);
+    async dictionaryHas(word: string): Promise<boolean> {
+        const dict = await this.dictionary;
+        return (word === this._solution ||
+            !!dict[word.length] && dict[word.length]!.some(arr => WordGame.binarySearch(arr, word) !== -1));
     }
 
     static binarySearch<T>(arr: T[], x: T): number {
@@ -194,19 +195,33 @@ class WordGame {
         return this.isActive() && this.state < State.Won; 
     }
 
-    guess(word: string): string {
+    async guess(word: string): Promise<string> {
         word = word.toLowerCase();
-
         if (this._params.enforceWidth && (word.length < this._params.width || word.length > this._params.maxWidth)) {
             return "Not enough letters";
-        } else if (this._params.enforceDictionary && !this.dictionaryHas(word)) {
-            return "Not in dictionary";
         } else if (this._params.enforceUnique && this.guesses.indexOf(word) !== -1) {
             return "Already guessed";
         } else if (!this.isActive()) {
             return "Out of guesses";
         } 
         
+        try {
+            if (this._params.enforceDictionary && !(await this.dictionaryHas(word))) {
+                return "Not in dictionary";
+            }
+        } catch (e) {
+            return "Dictionary failed to load. Refresh the page to try again.";
+        }
+
+        if (this._solution === undefined && this.solutionPromise) {
+            try {
+                await this.solutionPromise;
+            } catch (e) {
+                return "Dicitonary failed to load. Refresh the page to try again.";
+            }
+            
+        }
+
         if (this._params.hardmode) {
             const res = this.checkHardmode(word);
             if (res) {
@@ -219,6 +234,10 @@ class WordGame {
     }
 
     forceGuess(word: string) {
+        if (this._solution === undefined) {
+            return;
+        }
+
         word = word.toLowerCase();
 
         const letterCounts = new LetterCounts();
@@ -238,7 +257,7 @@ class WordGame {
             } else {
                 won = false;
                 const guessCount = letterCounts.get(c);
-                const solutionCount = this._letterCounts.get(c);
+                const solutionCount = this._letterCounts!.get(c);
 
                 if (guessCount < solutionCount) {
 
@@ -284,11 +303,15 @@ class WordGame {
     }
 
     checkHardmode(word: string) {
+        if (this._solution === undefined) {
+            return "";
+        }
+
         for (let i = 0; i < this.greens.length; i++) {
             if (!this.greens[i]) {
                 continue;
             }
-            const c = this.solution.charAt(i);
+            const c = this._solution.charAt(i);
             if (word.charAt(i) !== c) {
                 return `${i + 1}${this.getOrdinal(i + 1)} letter must be ${c.toUpperCase()}`;
             }
