@@ -7,7 +7,7 @@
     <meta name="googlebot" content="noindex">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <title>Yarn Redirect Page</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -23,7 +23,50 @@
         <a id="frontend">click here to proceed to page</a>
     </h1>
 
+    <div class="section section-textarea">
+        <p>Using the extension <i>Redirector</i> (available for <a
+                href="https://addons.mozilla.org/en-US/firefox/addon/redirector/">Firefox</a> or <a
+                href="https://chromewebstore.google.com/detail/redirector/jegbdohdgebjljoljfeinojeobdabpjo">Chrome</a>)
+            add the following redirect:</p>
+
+        <textarea id="textarea" readonly></textarea>
+        <p>
+            <a id="download"><button>Download to JSON</button></a>
+        </p>
+    </div>
+
     <script>
+        const jsonText = `{
+    "createdBy": "Redirector v3.5.3",
+    "createdAt": "2026-06-18T16:30:19.971Z",
+    "redirects": [
+        {
+            "description": "Yarn redirect",
+            "exampleUrl": "https://getyarn.io/yarn-clip/8b96d95e-04f0-4def-aec0-486d3e77ee6b",
+            "exampleResult": "https://anonuserguy.github.io/yarn_redirect/?t=8b96d95e-04f0-4def-aec0-486d3e77ee6b",
+            "error": null,
+            "includePattern": "^https?:\\\\/\\\\/(?:[a-z]*\\\\.)?(?:getyarn\\\\.io|yarn\\\\.co)\\\\/yarn-clip\\\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?!.*\\\\?.*redirect)",
+            "excludePattern": "",
+            "patternDesc": "redirect Yarn's broken frontend page to a simplified page with direct links to mp4 and gif",
+            "redirectUrl": "https://anonuserguy.github.io/yarn_redirect/?t=$1",
+            "patternType": "R",
+            "processMatches": "noProcessing",
+            "disabled": false,
+            "grouped": false,
+            "appliesTo": [
+                "main_frame"
+            ]
+        }
+    ]
+}`
+        const textarea = document.getElementById("textarea");
+        textarea.value = jsonText;
+
+        const file = new Blob([jsonText], { type: 'application/json' });
+        const download = document.getElementById("download");
+        download.href = window.URL.createObjectURL(file);
+        download.download = "Redirector_Yarn_redirect.json"
+
         const url = new URL(window.location.href);
         const search = url.searchParams;
         if (!search.has("t")) {

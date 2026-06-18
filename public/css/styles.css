@@ -642,10 +642,15 @@ table tr>th[colspan] {
     min-width: fit-content;
 }
 
+.section-textarea>p{
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 textarea {
     width: calc(100% - 8px);
     height: 30vh;
     white-space: pre;
     overflow-wrap: normal;
-    overflow-x: scroll;
 }
