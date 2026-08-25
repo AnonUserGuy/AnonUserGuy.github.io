@@ -66,6 +66,10 @@ input[type="submit"] {
     gap: 10px;
 }
 
+.text-entries>p {
+    margin-top: 0px;
+}
+
 .dot {
     position: fixed;
     overflow: hidden;
