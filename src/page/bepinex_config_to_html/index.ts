@@ -61,14 +61,14 @@ function doThing(text: string): HTMLTableElement {
         if (match) {
             const name = match[1];
             let type: string | null = null;
-            let defaultVal: string | null = null;
+            let defaultVal: string[] | null = null;
             let description: string[] = [];
             for (let j = i - 1; j > 0; j--) {
                 const line2 = lines[j];
                 if (!defaultVal) {
                     const match2 = line2.match(/^# Default value: (.*)$/m);
                     if (match2) {
-                        defaultVal = match2[1];
+                        defaultVal = match2[1].split(", ");
                         continue;
                     }
                 } else if (!type) {
@@ -85,6 +85,22 @@ function doThing(text: string): HTMLTableElement {
                     break;
                 }
             }
+
+            let defaultX: (HTMLElement | string)[] = []
+            if (defaultVal) {
+                for (let k = 0; k < defaultVal.length - 1; k++) {
+                    defaultX.push(createElementEX("code", {}, [
+                        defaultVal[k]
+                    ]))
+                    defaultX.push(", ")
+                } 
+                if (defaultVal.length > 0) {
+                    defaultX.push(createElementEX("code", {}, [
+                        defaultVal[defaultVal.length - 1]
+                    ]))
+                }
+            }
+
             table.appendChild(
                 createElementEX("tr", {}, [
                     createElementEX("td", {}, [
@@ -95,11 +111,7 @@ function doThing(text: string): HTMLTableElement {
                     createElementEX("td", {}, [
                         type
                     ]),
-                    createElementEX("td", {}, [
-                        createElementEX("code", {}, [
-                            defaultVal
-                        ])
-                    ]),
+                    createElementEX("td", {}, defaultX),
                     createElementEX("td", {}, description.length !== 1 ?
                         description.map(desc => createElementEX("p", {}, [
                             desc
