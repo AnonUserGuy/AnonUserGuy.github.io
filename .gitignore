@@ -1,0 +1,5 @@
+*.code-workspace
+*.bat
+*.cs
+node_modules/
+dist/
